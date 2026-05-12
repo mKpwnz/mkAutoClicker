@@ -1,0 +1,92 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <sys:String x:Key="Localization.Overlay">zh</sys:String>
+
+    <sys:String x:Key="Ui.Window.Title">mKAutoClicker</sys:String>
+
+    <sys:String x:Key="Ui.Header.Status.Initial">状态: 空闲</sys:String>
+    <sys:String x:Key="Ui.Header.Clicks.Initial">点击: 0</sys:String>
+    <sys:String x:Key="Ui.Header.Elapsed.Initial">耗时: 00:00:00</sys:String>
+    <sys:String x:Key="Ui.Header.Status.Format">状态: {0}</sys:String>
+    <sys:String x:Key="Ui.Header.Clicks.Format">点击: {0}</sys:String>
+    <sys:String x:Key="Ui.Header.Elapsed.Format">耗时: {0}</sys:String>
+
+    <sys:String x:Key="Ui.Tab.Action">操作</sys:String>
+    <sys:String x:Key="Ui.Tab.Timing">速度</sys:String>
+    <sys:String x:Key="Ui.Tab.Limits">限制</sys:String>
+    <sys:String x:Key="Ui.Tab.Hotkey">热键</sys:String>
+    <sys:String x:Key="Ui.Tab.Settings">设置</sys:String>
+
+    <sys:String x:Key="Ui.Action.InputType.Label">输入类型</sys:String>
+    <sys:String x:Key="Ui.Action.InputType.Description">Mouse Left、Mouse Middle、Mouse Right 或 Keyboard Key。</sys:String>
+    <sys:String x:Key="Ui.Action.KeyboardKey.Label">键盘按键</sys:String>
+    <sys:String x:Key="Ui.Action.KeyboardKey.Description">仅在选择 Keyboard Key 时显示。</sys:String>
+
+    <sys:String x:Key="Ui.Timing.ClicksPerSecond.Label">点击/秒</sys:String>
+    <sys:String x:Key="Ui.Timing.ClicksPerSecond.Description">每秒 0.1 到 1000 次点击。</sys:String>
+    <sys:String x:Key="Ui.Timing.Interval.Label">每 X 毫秒 1 次</sys:String>
+    <sys:String x:Key="Ui.Timing.Interval.Description">1 到 10000 毫秒，自动与 CPS 同步。</sys:String>
+    <sys:String x:Key="Ui.Timing.Variation.Label">速度波动 (%)</sys:String>
+    <sys:String x:Key="Ui.Timing.Variation.Description">对间隔添加 0 到 95% 的抖动。</sys:String>
+    <sys:String x:Key="Ui.Timing.DutyMin.Label">按下占空比最小值 (%)</sys:String>
+    <sys:String x:Key="Ui.Timing.DutyMin.Description">每个周期最短按下时间。</sys:String>
+    <sys:String x:Key="Ui.Timing.DutyMax.Label">按下占空比最大值 (%)</sys:String>
+    <sys:String x:Key="Ui.Timing.DutyMax.Description">每个周期最长按下时间。</sys:String>
+
+    <sys:String x:Key="Ui.Limits.ClickLimit.Label">点击次数限制</sys:String>
+    <sys:String x:Key="Ui.Limits.ClickLimit.Description">达到 N 次点击后停止。</sys:String>
+    <sys:String x:Key="Ui.Limits.TimeLimit.Label">时间限制 (秒)</sys:String>
+    <sys:String x:Key="Ui.Limits.TimeLimit.Description">达到最大运行时长后停止。</sys:String>
+    <sys:String x:Key="Ui.Common.Enable">启用</sys:String>
+
+    <sys:String x:Key="Ui.Hotkey.Configured.Label">当前配置</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Configured.Description">当前已注册的组合键。</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Mode.Label">模式</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Mode.Description">Toggle 用于开始/停止，Hold 仅在按住时运行。</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Record.Label">录制热键</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Record.Description">录制新的组合键 (ESC 取消)。</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Record.Button">录制热键</sys:String>
+
+    <sys:String x:Key="Ui.Settings.Language.Label">语言</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.Description">即时切换应用语言。</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.English">English</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.German">Deutsch</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.French">Français</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.Chinese">中文 (简体)</sys:String>
+
+    <sys:String x:Key="Ui.ActionType.MouseLeft">Mouse Left</sys:String>
+    <sys:String x:Key="Ui.ActionType.MouseMiddle">Mouse Middle</sys:String>
+    <sys:String x:Key="Ui.ActionType.MouseRight">Mouse Right</sys:String>
+    <sys:String x:Key="Ui.ActionType.KeyboardKey">Keyboard Key</sys:String>
+    <sys:String x:Key="Ui.HotkeyMode.Toggle">Toggle</sys:String>
+    <sys:String x:Key="Ui.HotkeyMode.Hold">Hold</sys:String>
+
+    <sys:String x:Key="Ui.Keyboard.Group.Alphabet">字母</sys:String>
+    <sys:String x:Key="Ui.Keyboard.Group.Numbers">数字</sys:String>
+    <sys:String x:Key="Ui.Keyboard.Group.FunctionKeys">功能键</sys:String>
+    <sys:String x:Key="Ui.Keyboard.Group.Numpad">数字小键盘</sys:String>
+    <sys:String x:Key="Ui.Keyboard.Group.Other">其他按键</sys:String>
+
+    <sys:String x:Key="Ui.Status.Idle">空闲</sys:String>
+    <sys:String x:Key="Ui.Status.Running">运行中</sys:String>
+    <sys:String x:Key="Ui.Status.Stopped">已停止</sys:String>
+    <sys:String x:Key="Ui.Status.StoppedClickLimit">已停止（达到点击次数限制）</sys:String>
+    <sys:String x:Key="Ui.Status.StoppedTimeLimit">已停止（达到时间限制）</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyCapturePrompt">录制热键: 请现在按下组合键 (ESC 取消)。</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyRegisterFailed">热键注册失败。请选择其他组合键。</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyCaptureCancelled">热键录制已取消。</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyNeedNonModifier">请至少按下一个非修饰键。</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyNeedModifier">热键必须包含至少一个修饰键。</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyUpdated">热键已更新。</sys:String>
+    <sys:String x:Key="Ui.Status.ErrorPrefix">错误: {0}</sys:String>
+
+    <sys:String x:Key="Ui.Validation.ClicksPerSecond">点击/秒必须在 0.1 到 1000 之间。</sys:String>
+    <sys:String x:Key="Ui.Validation.Variation">速度波动必须在 0 到 95% 之间。</sys:String>
+    <sys:String x:Key="Ui.Validation.DutyMin">Duty min 必须在 1 到 99% 之间。</sys:String>
+    <sys:String x:Key="Ui.Validation.DutyMax">Duty max 必须在 1 到 99% 之间。</sys:String>
+    <sys:String x:Key="Ui.Validation.DutyRange">Duty min 不能大于 Duty max。</sys:String>
+    <sys:String x:Key="Ui.Validation.ClickLimit">点击次数限制必须大于 0。</sys:String>
+    <sys:String x:Key="Ui.Validation.TimeLimit">时间限制至少为 1 秒。</sys:String>
+    <sys:String x:Key="Ui.Validation.KeyboardKey">请选择一个键盘按键。</sys:String>
+</ResourceDictionary>

@@ -1,0 +1,92 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <sys:String x:Key="Localization.Overlay">de</sys:String>
+
+    <sys:String x:Key="Ui.Window.Title">mKAutoClicker</sys:String>
+
+    <sys:String x:Key="Ui.Header.Status.Initial">Status: Leerlauf</sys:String>
+    <sys:String x:Key="Ui.Header.Clicks.Initial">Klicks: 0</sys:String>
+    <sys:String x:Key="Ui.Header.Elapsed.Initial">Zeit: 00:00:00</sys:String>
+    <sys:String x:Key="Ui.Header.Status.Format">Status: {0}</sys:String>
+    <sys:String x:Key="Ui.Header.Clicks.Format">Klicks: {0}</sys:String>
+    <sys:String x:Key="Ui.Header.Elapsed.Format">Zeit: {0}</sys:String>
+
+    <sys:String x:Key="Ui.Tab.Action">Aktion</sys:String>
+    <sys:String x:Key="Ui.Tab.Timing">Timing</sys:String>
+    <sys:String x:Key="Ui.Tab.Limits">Limits</sys:String>
+    <sys:String x:Key="Ui.Tab.Hotkey">Hotkey</sys:String>
+    <sys:String x:Key="Ui.Tab.Settings">Einstellungen</sys:String>
+
+    <sys:String x:Key="Ui.Action.InputType.Label">Eingabetyp</sys:String>
+    <sys:String x:Key="Ui.Action.InputType.Description">Mouse Left, Mouse Middle, Mouse Right oder Keyboard Key.</sys:String>
+    <sys:String x:Key="Ui.Action.KeyboardKey.Label">Tastaturtaste</sys:String>
+    <sys:String x:Key="Ui.Action.KeyboardKey.Description">Nur sichtbar, wenn Keyboard Key ausgewählt ist.</sys:String>
+
+    <sys:String x:Key="Ui.Timing.ClicksPerSecond.Label">Klicks/s</sys:String>
+    <sys:String x:Key="Ui.Timing.ClicksPerSecond.Description">0,1 bis 1000 Klicks pro Sekunde.</sys:String>
+    <sys:String x:Key="Ui.Timing.Interval.Label">1 Klick alle X ms</sys:String>
+    <sys:String x:Key="Ui.Timing.Interval.Description">1 bis 10000 ms, mit CPS synchronisiert.</sys:String>
+    <sys:String x:Key="Ui.Timing.Variation.Label">Geschwindigkeitsvariation (%)</sys:String>
+    <sys:String x:Key="Ui.Timing.Variation.Description">0 bis 95 Prozent Jitter auf das Intervall.</sys:String>
+    <sys:String x:Key="Ui.Timing.DutyMin.Label">Duty cycle min (%)</sys:String>
+    <sys:String x:Key="Ui.Timing.DutyMin.Description">Minimale Hold-Zeit pro Zyklus.</sys:String>
+    <sys:String x:Key="Ui.Timing.DutyMax.Label">Duty cycle max (%)</sys:String>
+    <sys:String x:Key="Ui.Timing.DutyMax.Description">Maximale Hold-Zeit pro Zyklus.</sys:String>
+
+    <sys:String x:Key="Ui.Limits.ClickLimit.Label">Klicklimit</sys:String>
+    <sys:String x:Key="Ui.Limits.ClickLimit.Description">Stoppt nach N Klicks.</sys:String>
+    <sys:String x:Key="Ui.Limits.TimeLimit.Label">Zeitlimit (s)</sys:String>
+    <sys:String x:Key="Ui.Limits.TimeLimit.Description">Stoppt nach maximaler Laufzeit in Sekunden.</sys:String>
+    <sys:String x:Key="Ui.Common.Enable">Aktivieren</sys:String>
+
+    <sys:String x:Key="Ui.Hotkey.Configured.Label">Konfiguriert</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Configured.Description">Derzeit registrierte Kombination.</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Mode.Label">Modus</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Mode.Description">Toggle startet/stoppt, Hold läuft nur beim Halten.</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Record.Label">Hotkey aufnehmen</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Record.Description">Neue Kombination aufnehmen (ESC bricht ab).</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Record.Button">Hotkey aufnehmen</sys:String>
+
+    <sys:String x:Key="Ui.Settings.Language.Label">Sprache</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.Description">Anwendungssprache sofort umstellen.</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.English">English</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.German">Deutsch</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.French">Français</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.Chinese">中文 (简体)</sys:String>
+
+    <sys:String x:Key="Ui.ActionType.MouseLeft">Mouse Left</sys:String>
+    <sys:String x:Key="Ui.ActionType.MouseMiddle">Mouse Middle</sys:String>
+    <sys:String x:Key="Ui.ActionType.MouseRight">Mouse Right</sys:String>
+    <sys:String x:Key="Ui.ActionType.KeyboardKey">Keyboard Key</sys:String>
+    <sys:String x:Key="Ui.HotkeyMode.Toggle">Toggle</sys:String>
+    <sys:String x:Key="Ui.HotkeyMode.Hold">Hold</sys:String>
+
+    <sys:String x:Key="Ui.Keyboard.Group.Alphabet">Alphabet</sys:String>
+    <sys:String x:Key="Ui.Keyboard.Group.Numbers">Zahlen</sys:String>
+    <sys:String x:Key="Ui.Keyboard.Group.FunctionKeys">Funktionstasten</sys:String>
+    <sys:String x:Key="Ui.Keyboard.Group.Numpad">Numblock</sys:String>
+    <sys:String x:Key="Ui.Keyboard.Group.Other">Sonstige Tasten</sys:String>
+
+    <sys:String x:Key="Ui.Status.Idle">Leerlauf</sys:String>
+    <sys:String x:Key="Ui.Status.Running">Läuft</sys:String>
+    <sys:String x:Key="Ui.Status.Stopped">Gestoppt</sys:String>
+    <sys:String x:Key="Ui.Status.StoppedClickLimit">Gestoppt (Klicklimit erreicht)</sys:String>
+    <sys:String x:Key="Ui.Status.StoppedTimeLimit">Gestoppt (Zeitlimit erreicht)</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyCapturePrompt">Hotkey-Aufnahme: Kombination jetzt drücken (ESC zum Abbrechen).</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyRegisterFailed">Hotkey konnte nicht registriert werden. Bitte andere Kombination wählen.</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyCaptureCancelled">Hotkey-Aufnahme abgebrochen.</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyNeedNonModifier">Bitte mindestens eine Nicht-Modifier-Taste drücken.</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyNeedModifier">Hotkey muss mindestens einen Modifier enthalten.</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyUpdated">Hotkey aktualisiert.</sys:String>
+    <sys:String x:Key="Ui.Status.ErrorPrefix">Fehler: {0}</sys:String>
+
+    <sys:String x:Key="Ui.Validation.ClicksPerSecond">Klicks/s muss zwischen 0,1 und 1000 liegen.</sys:String>
+    <sys:String x:Key="Ui.Validation.Variation">Variation muss zwischen 0 und 95 Prozent liegen.</sys:String>
+    <sys:String x:Key="Ui.Validation.DutyMin">Duty min muss zwischen 1 und 99 Prozent liegen.</sys:String>
+    <sys:String x:Key="Ui.Validation.DutyMax">Duty max muss zwischen 1 und 99 Prozent liegen.</sys:String>
+    <sys:String x:Key="Ui.Validation.DutyRange">Duty min darf nicht größer als Duty max sein.</sys:String>
+    <sys:String x:Key="Ui.Validation.ClickLimit">Klicklimit muss größer als 0 sein.</sys:String>
+    <sys:String x:Key="Ui.Validation.TimeLimit">Zeitlimit muss mindestens 1 Sekunde sein.</sys:String>
+    <sys:String x:Key="Ui.Validation.KeyboardKey">Bitte eine Tastaturtaste auswählen.</sys:String>
+</ResourceDictionary>

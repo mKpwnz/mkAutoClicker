@@ -16,6 +16,7 @@
     <sys:String x:Key="Ui.Tab.Timing">Timing</sys:String>
     <sys:String x:Key="Ui.Tab.Limits">Limits</sys:String>
     <sys:String x:Key="Ui.Tab.Hotkey">Hotkey</sys:String>
+    <sys:String x:Key="Ui.Tab.Settings">Settings</sys:String>
 
     <sys:String x:Key="Ui.Action.InputType.Label">Input type</sys:String>
     <sys:String x:Key="Ui.Action.InputType.Description">Mouse Left, Mouse Middle, Mouse Right, or Keyboard Key.</sys:String>
@@ -46,6 +47,13 @@
     <sys:String x:Key="Ui.Hotkey.Record.Label">Record hotkey</sys:String>
     <sys:String x:Key="Ui.Hotkey.Record.Description">Capture a new shortcut (ESC cancels).</sys:String>
     <sys:String x:Key="Ui.Hotkey.Record.Button">Record hotkey</sys:String>
+
+    <sys:String x:Key="Ui.Settings.Language.Label">Language</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.Description">Change application language instantly.</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.English">English</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.German">Deutsch</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.French">Français</sys:String>
+    <sys:String x:Key="Ui.Settings.Language.Chinese">中文 (Simplified)</sys:String>
 
     <sys:String x:Key="Ui.ActionType.MouseLeft">Mouse Left</sys:String>
     <sys:String x:Key="Ui.ActionType.MouseMiddle">Mouse Middle</sys:String>

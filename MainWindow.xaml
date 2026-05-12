@@ -193,6 +193,16 @@
                             </comp:SettingRow>
                         </StackPanel>
                     </TabItem>
+
+                    <TabItem Header="{DynamicResource Ui.Tab.Settings}"
+                             Style="{StaticResource AppTabItemStyle}">
+                        <StackPanel>
+                            <comp:SettingRow Label="{DynamicResource Ui.Settings.Language.Label}"
+                                             Description="{DynamicResource Ui.Settings.Language.Description}">
+                                <comp:MkSelectField x:Name="LanguageComboBox" MinWidth="220" />
+                            </comp:SettingRow>
+                        </StackPanel>
+                    </TabItem>
                 </TabControl>
             </Grid>
         </ScrollViewer>
