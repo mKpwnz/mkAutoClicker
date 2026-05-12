@@ -1,0 +1,57 @@
+name: Build and Release
+
+on:
+    push:
+        branches:
+            - release
+
+permissions:
+    contents: write
+
+concurrency:
+    group: release-${{ github.ref }}
+    cancel-in-progress: false
+
+jobs:
+    release:
+        runs-on: windows-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: 8.0.x
+
+            - name: Build release artifact
+              shell: pwsh
+              run: .\build-release.ps1
+
+            - name: Resolve version and artifact
+              id: meta
+              shell: pwsh
+              run: |
+                  [xml]$project = Get-Content .\mkAutoClicker.csproj
+                  $version = $project.Project.PropertyGroup.Version | Select-Object -First 1
+                  if ([string]::IsNullOrWhiteSpace($version)) {
+                      $version = $project.Project.PropertyGroup.VersionPrefix | Select-Object -First 1
+                  }
+                  if ([string]::IsNullOrWhiteSpace($version)) {
+                      $version = "0.0.0"
+                  }
+
+                  $artifactPath = Resolve-Path ".\bin\publish\win-x64\framework-dependent-onefile\mkAutoClicker_${version}.exe"
+
+                  "version=$version" >> $env:GITHUB_OUTPUT
+                  "artifact_path=$artifactPath" >> $env:GITHUB_OUTPUT
+                  "tag_name=v$version-build-${{ github.run_number }}" >> $env:GITHUB_OUTPUT
+
+            - name: Publish GitHub release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ steps.meta.outputs.tag_name }}
+                  name: mKAutoClicker v${{ steps.meta.outputs.version }} (build ${{ github.run_number }})
+                  files: ${{ steps.meta.outputs.artifact_path }}
+                  generate_release_notes: true

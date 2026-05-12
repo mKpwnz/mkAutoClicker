@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:comp="clr-namespace:mkAutoClicker.Components"
         mc:Ignorable="d"
-        Title="mKAutoClicker"
+        Title="{DynamicResource Ui.Window.Title}"
         Icon="assets/mkautoclicker.png"
         Width="700"
         SizeToContent="Height"
@@ -35,7 +35,7 @@
                            Grid.Column="0"
                            VerticalAlignment="Center"
                            FontWeight="SemiBold"
-                           Text="Status: Idle" />
+                           Text="{DynamicResource Ui.Header.Status.Initial}" />
 
                 <StackPanel Grid.Column="1"
                             Margin="10,0,12,0"
@@ -43,10 +43,10 @@
                             VerticalAlignment="Center">
                     <TextBlock x:Name="ClicksTextBlock"
                                Margin="0,0,12,0"
-                               Text="Clicks: 0"
+                               Text="{DynamicResource Ui.Header.Clicks.Initial}"
                                Style="{StaticResource BodySecondaryText}" />
                     <TextBlock x:Name="ElapsedTextBlock"
-                               Text="Elapsed: 00:00:00"
+                               Text="{DynamicResource Ui.Header.Elapsed.Initial}"
                                Style="{StaticResource BodySecondaryText}" />
                 </StackPanel>
 
@@ -85,57 +85,57 @@
                             Margin="0,0,1,0"
                             SelectionChanged="MainTabControl_SelectionChanged"
                             Style="{StaticResource AppTabControlStyle}">
-                    <TabItem Header="Action"
+                    <TabItem Header="{DynamicResource Ui.Tab.Action}"
                              Style="{StaticResource AppTabItemStyle}">
                         <StackPanel>
-                            <comp:SettingRow Label="Input type"
-                                             Description="Mouse Left, Mouse Middle, Mouse Right oder Keyboard Key.">
+                            <comp:SettingRow Label="{DynamicResource Ui.Action.InputType.Label}"
+                                             Description="{DynamicResource Ui.Action.InputType.Description}">
                                 <comp:MkSelectField x:Name="ActionTypeComboBox" MinWidth="220" />
                             </comp:SettingRow>
 
                             <comp:SettingRow x:Name="KeyboardKeyRow"
-                                             Label="Keyboard key"
-                                             Description="Nur sichtbar, wenn Keyboard Key aktiv ist.">
+                                             Label="{DynamicResource Ui.Action.KeyboardKey.Label}"
+                                             Description="{DynamicResource Ui.Action.KeyboardKey.Description}">
                                 <comp:MkSelectField x:Name="KeyboardKeyComboBox" MinWidth="220" />
                             </comp:SettingRow>
                         </StackPanel>
                     </TabItem>
 
-                    <TabItem Header="Timing"
+                    <TabItem Header="{DynamicResource Ui.Tab.Timing}"
                              Style="{StaticResource AppTabItemStyle}">
                         <StackPanel>
-                            <comp:SettingRow Label="Clicks/s"
-                                             Description="0.1 bis 1000 Klicks pro Sekunde.">
+                            <comp:SettingRow Label="{DynamicResource Ui.Timing.ClicksPerSecond.Label}"
+                                             Description="{DynamicResource Ui.Timing.ClicksPerSecond.Description}">
                                 <comp:MkTextBox x:Name="ClicksPerSecondTextBox" MinWidth="220" />
                             </comp:SettingRow>
 
-                            <comp:SettingRow Label="1 Klick alle X ms"
-                                             Description="1 bis 10000 ms, automatisch mit CPS synchronisiert.">
+                            <comp:SettingRow Label="{DynamicResource Ui.Timing.Interval.Label}"
+                                             Description="{DynamicResource Ui.Timing.Interval.Description}">
                                 <comp:MkTextBox x:Name="IntervalMsTextBox" MinWidth="220" />
                             </comp:SettingRow>
 
-                            <comp:SettingRow Label="Speed variation (%)"
-                                             Description="0 bis 95 Prozent Jitter auf das Intervall.">
+                            <comp:SettingRow Label="{DynamicResource Ui.Timing.Variation.Label}"
+                                             Description="{DynamicResource Ui.Timing.Variation.Description}">
                                 <comp:MkTextBox x:Name="VariationTextBox" MinWidth="220" />
                             </comp:SettingRow>
 
-                            <comp:SettingRow Label="Duty cycle min (%)"
-                                             Description="Minimale Hold-Zeit pro Zyklus.">
+                            <comp:SettingRow Label="{DynamicResource Ui.Timing.DutyMin.Label}"
+                                             Description="{DynamicResource Ui.Timing.DutyMin.Description}">
                                 <comp:MkTextBox x:Name="DutyMinTextBox" MinWidth="220" />
                             </comp:SettingRow>
 
-                            <comp:SettingRow Label="Duty cycle max (%)"
-                                             Description="Maximale Hold-Zeit pro Zyklus.">
+                            <comp:SettingRow Label="{DynamicResource Ui.Timing.DutyMax.Label}"
+                                             Description="{DynamicResource Ui.Timing.DutyMax.Description}">
                                 <comp:MkTextBox x:Name="DutyMaxTextBox" MinWidth="220" />
                             </comp:SettingRow>
                         </StackPanel>
                     </TabItem>
 
-                    <TabItem Header="Limits"
+                    <TabItem Header="{DynamicResource Ui.Tab.Limits}"
                              Style="{StaticResource AppTabItemStyle}">
                         <StackPanel>
-                            <comp:SettingRow Label="Click limit"
-                                             Description="Stoppt nach N Klicks.">
+                            <comp:SettingRow Label="{DynamicResource Ui.Limits.ClickLimit.Label}"
+                                             Description="{DynamicResource Ui.Limits.ClickLimit.Description}">
                                 <Grid MinWidth="220">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
@@ -144,14 +144,14 @@
                                     </Grid.ColumnDefinitions>
                                     <comp:MkCheckBox x:Name="EnableClickLimitCheckBox"
                                                      Grid.Column="0"
-                                                     Text="Enable" />
+                                                     Text="{DynamicResource Ui.Common.Enable}" />
                                     <comp:MkTextBox x:Name="ClickLimitTextBox"
                                                     Grid.Column="2" />
                                 </Grid>
                             </comp:SettingRow>
 
-                            <comp:SettingRow Label="Time limit (s)"
-                                             Description="Stoppt nach maximaler Zeit in Sekunden.">
+                            <comp:SettingRow Label="{DynamicResource Ui.Limits.TimeLimit.Label}"
+                                             Description="{DynamicResource Ui.Limits.TimeLimit.Description}">
                                 <Grid MinWidth="220">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
@@ -160,7 +160,7 @@
                                     </Grid.ColumnDefinitions>
                                     <comp:MkCheckBox x:Name="EnableTimeLimitCheckBox"
                                                      Grid.Column="0"
-                                                     Text="Enable" />
+                                                     Text="{DynamicResource Ui.Common.Enable}" />
                                     <comp:MkTextBox x:Name="TimeLimitSecondsTextBox"
                                                     Grid.Column="2" />
                                 </Grid>
@@ -168,28 +168,28 @@
                         </StackPanel>
                     </TabItem>
 
-                    <TabItem Header="Hotkey"
+                    <TabItem Header="{DynamicResource Ui.Tab.Hotkey}"
                              Style="{StaticResource AppTabItemStyle}">
                         <StackPanel>
-                            <comp:SettingRow Label="Configured"
-                                             Description="Aktuell registrierte Kombination.">
+                            <comp:SettingRow Label="{DynamicResource Ui.Hotkey.Configured.Label}"
+                                             Description="{DynamicResource Ui.Hotkey.Configured.Description}">
                                 <comp:MkBadge x:Name="HotkeyDisplayBadge"
                                               MinWidth="220"
                                               Label=""
                                               ValueForeground="{StaticResource Brush.TextPrimary}" />
                             </comp:SettingRow>
 
-                            <comp:SettingRow Label="Mode"
-                                             Description="Toggle startet/stoppt, Hold laeuft nur beim Halten.">
+                            <comp:SettingRow Label="{DynamicResource Ui.Hotkey.Mode.Label}"
+                                             Description="{DynamicResource Ui.Hotkey.Mode.Description}">
                                 <comp:MkSelectField x:Name="HotkeyModeComboBox" MinWidth="220" />
                             </comp:SettingRow>
 
-                            <comp:SettingRow Label="Record hotkey"
-                                             Description="Neue Kombination aufzeichnen (ESC bricht ab).">
+                            <comp:SettingRow Label="{DynamicResource Ui.Hotkey.Record.Label}"
+                                             Description="{DynamicResource Ui.Hotkey.Record.Description}">
                                 <comp:MkButton x:Name="RecordHotkeyButton"
                                                MinWidth="220"
                                                Variant="Outline"
-                                               Text="Hotkey aufnehmen" />
+                                               Text="{DynamicResource Ui.Hotkey.Record.Button}" />
                             </comp:SettingRow>
                         </StackPanel>
                     </TabItem>

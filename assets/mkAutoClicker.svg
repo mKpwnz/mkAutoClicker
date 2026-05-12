@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="100%" height="100%" viewBox="0 0 960 629" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+<svg width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
     <g transform="matrix(1,0,0,1,-0.000094,-0.000092)">
-        <g transform="matrix(1,0,0,1,-32.170387,-197.600494)">
+        <g transform="matrix(1,0,0,1,-0.000084,-0.000055)">
             <g transform="matrix(1.646071,0,0,1.646071,-354.656204,-332.434276)">
-                <path d="M235,462L360,390L500,465L500,670L430,624L430,503L398,484L398,690L332,650L332,504L292,528L292,625L235,585L235,462Z" style="fill:rgb(0,89,138);fill-rule:nonzero;"/>
+                <path d="M235,462L360,390L500,465L500,670L430,624L430,503L398,484L398,690L332,650L332,504L292,528L292,625L235,585L235,462Z" style="fill:rgb(0,166,244);fill-rule:nonzero;"/>
             </g>
             <g transform="matrix(1.646071,0,0,1.646071,-506.094736,-332.434276)">
-                <path d="M520,368L592,324L592,452L520,413L520,368Z" style="fill:rgb(0,89,138);fill-rule:nonzero;"/>
+                <path d="M520,368L592,324L592,452L520,413L520,368Z" style="fill:rgb(0,166,244);fill-rule:nonzero;"/>
             </g>
             <g transform="matrix(1.646071,0,0,1.646071,-506.094736,-332.434276)">
-                <path d="M610,324L684,368L684,450L804,322L910,322L735,502L910,692L804,692L684,568L684,630L610,704L610,324Z" style="fill:rgb(0,89,138);fill-rule:nonzero;"/>
+                <path d="M610,324L684,368L684,450L804,322L910,322L735,502L910,692L804,692L684,568L684,630L610,704L610,324Z" style="fill:rgb(0,166,244);fill-rule:nonzero;"/>
             </g>
         </g>
     </g>

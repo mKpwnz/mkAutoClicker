@@ -1,0 +1,84 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <sys:String x:Key="Localization.Base">en</sys:String>
+
+    <sys:String x:Key="Ui.Window.Title">mKAutoClicker</sys:String>
+
+    <sys:String x:Key="Ui.Header.Status.Initial">Status: Idle</sys:String>
+    <sys:String x:Key="Ui.Header.Clicks.Initial">Clicks: 0</sys:String>
+    <sys:String x:Key="Ui.Header.Elapsed.Initial">Elapsed: 00:00:00</sys:String>
+    <sys:String x:Key="Ui.Header.Status.Format">Status: {0}</sys:String>
+    <sys:String x:Key="Ui.Header.Clicks.Format">Clicks: {0}</sys:String>
+    <sys:String x:Key="Ui.Header.Elapsed.Format">Elapsed: {0}</sys:String>
+
+    <sys:String x:Key="Ui.Tab.Action">Action</sys:String>
+    <sys:String x:Key="Ui.Tab.Timing">Timing</sys:String>
+    <sys:String x:Key="Ui.Tab.Limits">Limits</sys:String>
+    <sys:String x:Key="Ui.Tab.Hotkey">Hotkey</sys:String>
+
+    <sys:String x:Key="Ui.Action.InputType.Label">Input type</sys:String>
+    <sys:String x:Key="Ui.Action.InputType.Description">Mouse Left, Mouse Middle, Mouse Right, or Keyboard Key.</sys:String>
+    <sys:String x:Key="Ui.Action.KeyboardKey.Label">Keyboard key</sys:String>
+    <sys:String x:Key="Ui.Action.KeyboardKey.Description">Only visible while Keyboard Key is selected.</sys:String>
+
+    <sys:String x:Key="Ui.Timing.ClicksPerSecond.Label">Clicks/s</sys:String>
+    <sys:String x:Key="Ui.Timing.ClicksPerSecond.Description">0.1 to 1000 clicks per second.</sys:String>
+    <sys:String x:Key="Ui.Timing.Interval.Label">1 click every X ms</sys:String>
+    <sys:String x:Key="Ui.Timing.Interval.Description">1 to 10000 ms, synchronized with CPS.</sys:String>
+    <sys:String x:Key="Ui.Timing.Variation.Label">Speed variation (%)</sys:String>
+    <sys:String x:Key="Ui.Timing.Variation.Description">0 to 95 percent jitter on the interval.</sys:String>
+    <sys:String x:Key="Ui.Timing.DutyMin.Label">Duty cycle min (%)</sys:String>
+    <sys:String x:Key="Ui.Timing.DutyMin.Description">Minimum hold time per cycle.</sys:String>
+    <sys:String x:Key="Ui.Timing.DutyMax.Label">Duty cycle max (%)</sys:String>
+    <sys:String x:Key="Ui.Timing.DutyMax.Description">Maximum hold time per cycle.</sys:String>
+
+    <sys:String x:Key="Ui.Limits.ClickLimit.Label">Click limit</sys:String>
+    <sys:String x:Key="Ui.Limits.ClickLimit.Description">Stops after N clicks.</sys:String>
+    <sys:String x:Key="Ui.Limits.TimeLimit.Label">Time limit (s)</sys:String>
+    <sys:String x:Key="Ui.Limits.TimeLimit.Description">Stops after max runtime in seconds.</sys:String>
+    <sys:String x:Key="Ui.Common.Enable">Enable</sys:String>
+
+    <sys:String x:Key="Ui.Hotkey.Configured.Label">Configured</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Configured.Description">Currently registered combination.</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Mode.Label">Mode</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Mode.Description">Toggle starts/stops, Hold runs while pressed.</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Record.Label">Record hotkey</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Record.Description">Capture a new shortcut (ESC cancels).</sys:String>
+    <sys:String x:Key="Ui.Hotkey.Record.Button">Record hotkey</sys:String>
+
+    <sys:String x:Key="Ui.ActionType.MouseLeft">Mouse Left</sys:String>
+    <sys:String x:Key="Ui.ActionType.MouseMiddle">Mouse Middle</sys:String>
+    <sys:String x:Key="Ui.ActionType.MouseRight">Mouse Right</sys:String>
+    <sys:String x:Key="Ui.ActionType.KeyboardKey">Keyboard Key</sys:String>
+    <sys:String x:Key="Ui.HotkeyMode.Toggle">Toggle</sys:String>
+    <sys:String x:Key="Ui.HotkeyMode.Hold">Hold</sys:String>
+
+    <sys:String x:Key="Ui.Keyboard.Group.Alphabet">Alphabet</sys:String>
+    <sys:String x:Key="Ui.Keyboard.Group.Numbers">Numbers</sys:String>
+    <sys:String x:Key="Ui.Keyboard.Group.FunctionKeys">Function Keys</sys:String>
+    <sys:String x:Key="Ui.Keyboard.Group.Numpad">Numpad</sys:String>
+    <sys:String x:Key="Ui.Keyboard.Group.Other">Other Keys</sys:String>
+
+    <sys:String x:Key="Ui.Status.Idle">Idle</sys:String>
+    <sys:String x:Key="Ui.Status.Running">Running</sys:String>
+    <sys:String x:Key="Ui.Status.Stopped">Stopped</sys:String>
+    <sys:String x:Key="Ui.Status.StoppedClickLimit">Stopped (click limit reached)</sys:String>
+    <sys:String x:Key="Ui.Status.StoppedTimeLimit">Stopped (time limit reached)</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyCapturePrompt">Recording hotkey: press combination now (ESC to cancel).</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyRegisterFailed">Hotkey registration failed. Choose another combination.</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyCaptureCancelled">Hotkey capture cancelled.</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyNeedNonModifier">Please press at least one non-modifier key.</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyNeedModifier">Hotkey must include at least one modifier.</sys:String>
+    <sys:String x:Key="Ui.Status.HotkeyUpdated">Hotkey updated.</sys:String>
+    <sys:String x:Key="Ui.Status.ErrorPrefix">Error: {0}</sys:String>
+
+    <sys:String x:Key="Ui.Validation.ClicksPerSecond">Clicks/s must be between 0.1 and 1000.</sys:String>
+    <sys:String x:Key="Ui.Validation.Variation">Variation must be between 0 and 95 percent.</sys:String>
+    <sys:String x:Key="Ui.Validation.DutyMin">Duty min must be between 1 and 99 percent.</sys:String>
+    <sys:String x:Key="Ui.Validation.DutyMax">Duty max must be between 1 and 99 percent.</sys:String>
+    <sys:String x:Key="Ui.Validation.DutyRange">Duty min must not be greater than Duty max.</sys:String>
+    <sys:String x:Key="Ui.Validation.ClickLimit">Click limit must be greater than 0.</sys:String>
+    <sys:String x:Key="Ui.Validation.TimeLimit">Time limit must be at least 1 second.</sys:String>
+    <sys:String x:Key="Ui.Validation.KeyboardKey">Please select a keyboard key.</sys:String>
+</ResourceDictionary>

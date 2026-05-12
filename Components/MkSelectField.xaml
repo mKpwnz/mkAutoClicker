@@ -33,6 +33,8 @@
             <Setter Property="Padding" Value="10,5" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="IsEnabled" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBoxItem">
@@ -68,16 +70,33 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource Brush.AppSurfaceElevated}" />
+                                <Setter TargetName="ItemBorder" Property="Background"
+                                        Value="{StaticResource Brush.AppSurfaceElevated}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource Brush.AppSurfaceElevated}" />
+                                <Setter TargetName="ItemBorder" Property="Background"
+                                        Value="{StaticResource Brush.AppSurfaceElevated}" />
                                 <Setter TargetName="CheckIcon" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{StaticResource Brush.TextMuted}" />
+                                <Setter TargetName="ItemBorder" Property="Background" Value="Transparent" />
+                                <Setter TargetName="ItemBorder" Property="Margin" Value="2,6,2,2" />
+                                <Setter TargetName="CheckIcon" Property="Visibility" Value="Collapsed" />
+                                <Setter TargetName="CheckIcon" Property="Opacity" Value="0" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsGroupHeader}" Value="True">
+                    <Setter Property="IsEnabled" Value="False" />
+                    <Setter Property="FontSize" Value="11" />
+                    <Setter Property="FontWeight" Value="Bold" />
+                    <Setter Property="Padding" Value="8,2" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="ComboStyle" TargetType="ComboBox">
@@ -135,7 +154,6 @@
 
                             <ToggleButton Background="Transparent"
                                           BorderThickness="0"
-                                          Focusable="False"
                                           Style="{StaticResource PlainDropDownToggleStyle}"
                                           IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
                                 <Border Background="Transparent" />
@@ -162,15 +180,18 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                <Setter TargetName="MainBorder" Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+                                <Setter TargetName="MainBorder" Property="BorderBrush"
+                                        Value="{StaticResource Brush.Accent}" />
                                 <Setter TargetName="FocusRing" Property="Opacity" Value="0.35" />
                             </Trigger>
                             <Trigger Property="IsDropDownOpen" Value="True">
-                                <Setter TargetName="MainBorder" Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+                                <Setter TargetName="MainBorder" Property="BorderBrush"
+                                        Value="{StaticResource Brush.Accent}" />
                                 <Setter TargetName="FocusRing" Property="Opacity" Value="0.35" />
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="MainBorder" Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+                                <Setter TargetName="MainBorder" Property="BorderBrush"
+                                        Value="{StaticResource Brush.Accent}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="MainBorder" Property="Opacity" Value="0.55" />

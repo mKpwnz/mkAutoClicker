@@ -30,10 +30,9 @@ public enum StopReason {
 }
 
 public sealed class OptionItem<T> {
-    public OptionItem(string label, T value)
-    {
-        this.Label = label ?? throw new ArgumentNullException(nameof(label));
-        this.Value = value;
+    public OptionItem(string label, T value) {
+        Label = label ?? throw new ArgumentNullException(nameof(label));
+        Value = value;
     }
 
     public string Label { get; }
@@ -59,12 +58,12 @@ public sealed class HotkeyConfig {
 }
 
 public sealed class AppSettings {
-    public ClickProfile Profile { get; set; } = new ClickProfile();
+    public ClickProfile Profile { get; set; } = new();
     public bool IsClickLimitEnabled { get; set; }
     public int ClickLimitValue { get; set; } = 100;
     public bool IsTimeLimitEnabled { get; set; }
     public int TimeLimitSeconds { get; set; } = 30;
-    public HotkeyConfig Hotkey { get; set; } = new HotkeyConfig();
+    public HotkeyConfig Hotkey { get; set; } = new();
 }
 
 public sealed class ClickProgress {
@@ -79,24 +78,26 @@ public sealed class RunSummary {
 }
 
 public sealed class KeyOption {
-    public KeyOption(int virtualKeyCode, string label)
-    {
-        this.VirtualKeyCode = virtualKeyCode;
-        this.Label = label;
+    public KeyOption(int virtualKeyCode, string label, bool isGroupHeader = false) {
+        VirtualKeyCode = virtualKeyCode;
+        Label = label ?? throw new ArgumentNullException(nameof(label));
+        IsGroupHeader = isGroupHeader;
     }
 
     public int VirtualKeyCode { get; }
 
     public string Label { get; }
+
+    public bool IsGroupHeader { get; }
+
+    public static KeyOption CreateGroupHeader(string label) {
+        return new KeyOption(-1, label, true);
+    }
 }
 
 public static class Ensure {
     [Conditional("DEBUG")]
-    public static void That(bool condition, string message)
-    {
-        if (!condition)
-        {
-            throw new InvalidOperationException(message);
-        }
+    public static void That(bool condition, string message) {
+        if (!condition) throw new InvalidOperationException(message);
     }
 }
