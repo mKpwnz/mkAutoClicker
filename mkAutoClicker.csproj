@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UseWPF>true</UseWPF>
+        <PlatformTarget>x64</PlatformTarget>
+        <Prefer32Bit>false</Prefer32Bit>
+        <AssemblyName>mkClickerWpfSingle</AssemblyName>
+        <RootNamespace>mkAutoClicker</RootNamespace>
+        <ApplicationIcon>assets\mkAutoClicker.ico</ApplicationIcon>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Remove="assets\mkAutoClicker.ico" />
+        <Resource Include="assets\mkAutoClicker.ico" />
+
+        <None Remove="assets\mkAutoClicker.png" />
+        <Resource Include="assets\mkAutoClicker.png" />
+
+        <Compile Remove="OLD_CODE\**\*.cs" />
+        <EmbeddedResource Remove="OLD_CODE\**\*" />
+        <None Remove="OLD_CODE\**\*" />
+        <Page Remove="OLD_CODE\**\*.xaml" />
+        <ApplicationDefinition Remove="OLD_CODE\**\*.xaml" />
+    </ItemGroup>
+
+</Project>

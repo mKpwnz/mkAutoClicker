@@ -1,0 +1,39 @@
+<UserControl x:Class="mkAutoClicker.Components.MkTextBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             x:Name="Root"
+             Focusable="False"
+             mc:Ignorable="d"
+             d:Width="220"
+             d:Height="30">
+    <Grid>
+        <Border x:Name="FocusRingBorder"
+                Margin="-1"
+                CornerRadius="7"
+                BorderBrush="{StaticResource Brush.FocusRing}"
+                BorderThickness="2"
+                Opacity="0" />
+
+        <Border x:Name="InputBorder"
+                Background="{StaticResource Brush.AppSurfaceSoft}"
+                BorderBrush="{StaticResource Brush.AppBorder}"
+                BorderThickness="1"
+                CornerRadius="6">
+            <TextBox x:Name="InnerTextBox"
+                     Margin="8,4"
+                     Padding="0"
+                     MinHeight="18"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     CaretBrush="{StaticResource Brush.TextPrimary}"
+                     Text="{Binding Text, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=Text, TargetNullValue=Text}"
+                     Foreground="{StaticResource Brush.TextPrimary}"
+                     FontSize="12"
+                     FocusVisualStyle="{x:Null}"
+                     d:Text="Text"
+                     VerticalContentAlignment="Center" />
+        </Border>
+    </Grid>
+</UserControl>

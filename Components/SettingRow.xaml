@@ -1,0 +1,33 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:comp="clr-namespace:mkAutoClicker.Components">
+
+    <Style TargetType="{x:Type comp:SettingRow}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type comp:SettingRow}">
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3*" />
+                            <ColumnDefinition Width="2*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0"
+                                    Margin="0,0,12,0"
+                                    VerticalAlignment="Center">
+                            <TextBlock Text="{TemplateBinding Label}" />
+                            <TextBlock Margin="0,2,0,0"
+                                       Text="{TemplateBinding Description}"
+                                       Style="{StaticResource CaptionMutedText}" />
+                        </StackPanel>
+
+                        <ContentPresenter Grid.Column="1"
+                                          VerticalAlignment="Center"
+                                          Content="{TemplateBinding Content}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

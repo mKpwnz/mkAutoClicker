@@ -1,0 +1,200 @@
+<Window x:Class="mkAutoClicker.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:comp="clr-namespace:mkAutoClicker.Components"
+        mc:Ignorable="d"
+        Title="mKAutoClicker"
+        Icon="assets/mkautoclicker.png"
+        Width="700"
+        SizeToContent="Height"
+        MinWidth="600"
+        MinHeight="200"
+        ResizeMode="CanMinimize"
+        Background="{StaticResource Brush.AppBackground}">
+    <Grid x:Name="RootLayoutGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Padding="12,6"
+                Background="{StaticResource Brush.AppSurface}"
+                BorderBrush="{StaticResource Brush.AppBorder}"
+                BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="StatusTextBlock"
+                           Grid.Column="0"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Text="Status: Idle" />
+
+                <StackPanel Grid.Column="1"
+                            Margin="10,0,12,0"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <TextBlock x:Name="ClicksTextBlock"
+                               Margin="0,0,12,0"
+                               Text="Clicks: 0"
+                               Style="{StaticResource BodySecondaryText}" />
+                    <TextBlock x:Name="ElapsedTextBlock"
+                               Text="Elapsed: 00:00:00"
+                               Style="{StaticResource BodySecondaryText}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <comp:MkButton x:Name="StartButton"
+                                   Width="32"
+                                   Height="28"
+                                   Margin="0,0,8,0"
+                                   Variant="Primary"
+                                   Text=""
+                                   IconSize="14"
+                                   IconStrokeThickness="1.6"
+                                   IconPathData="{StaticResource Icon.Play}" />
+
+                    <comp:MkButton x:Name="StopButton"
+                                   Width="32"
+                                   Height="28"
+                                   Variant="Destructive"
+                                   Text=""
+                                   IconSize="14"
+                                   IconStrokeThickness="1.6"
+                                   IconPathData="{StaticResource Icon.Stop}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <ScrollViewer x:Name="MainScrollViewer"
+                      Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Background="{StaticResource Brush.AppBackground}">
+            <Grid Margin="12">
+                <TabControl x:Name="MainTabControl"
+                            Margin="0,0,1,0"
+                            SelectionChanged="MainTabControl_SelectionChanged"
+                            Style="{StaticResource AppTabControlStyle}">
+                    <TabItem Header="Action"
+                             Style="{StaticResource AppTabItemStyle}">
+                        <StackPanel>
+                            <comp:SettingRow Label="Input type"
+                                             Description="Mouse Left, Mouse Middle, Mouse Right oder Keyboard Key.">
+                                <comp:MkSelectField x:Name="ActionTypeComboBox" MinWidth="220" />
+                            </comp:SettingRow>
+
+                            <comp:SettingRow x:Name="KeyboardKeyRow"
+                                             Label="Keyboard key"
+                                             Description="Nur sichtbar, wenn Keyboard Key aktiv ist.">
+                                <comp:MkSelectField x:Name="KeyboardKeyComboBox" MinWidth="220" />
+                            </comp:SettingRow>
+                        </StackPanel>
+                    </TabItem>
+
+                    <TabItem Header="Timing"
+                             Style="{StaticResource AppTabItemStyle}">
+                        <StackPanel>
+                            <comp:SettingRow Label="Clicks/s"
+                                             Description="0.1 bis 1000 Klicks pro Sekunde.">
+                                <comp:MkTextBox x:Name="ClicksPerSecondTextBox" MinWidth="220" />
+                            </comp:SettingRow>
+
+                            <comp:SettingRow Label="1 Klick alle X ms"
+                                             Description="1 bis 10000 ms, automatisch mit CPS synchronisiert.">
+                                <comp:MkTextBox x:Name="IntervalMsTextBox" MinWidth="220" />
+                            </comp:SettingRow>
+
+                            <comp:SettingRow Label="Speed variation (%)"
+                                             Description="0 bis 95 Prozent Jitter auf das Intervall.">
+                                <comp:MkTextBox x:Name="VariationTextBox" MinWidth="220" />
+                            </comp:SettingRow>
+
+                            <comp:SettingRow Label="Duty cycle min (%)"
+                                             Description="Minimale Hold-Zeit pro Zyklus.">
+                                <comp:MkTextBox x:Name="DutyMinTextBox" MinWidth="220" />
+                            </comp:SettingRow>
+
+                            <comp:SettingRow Label="Duty cycle max (%)"
+                                             Description="Maximale Hold-Zeit pro Zyklus.">
+                                <comp:MkTextBox x:Name="DutyMaxTextBox" MinWidth="220" />
+                            </comp:SettingRow>
+                        </StackPanel>
+                    </TabItem>
+
+                    <TabItem Header="Limits"
+                             Style="{StaticResource AppTabItemStyle}">
+                        <StackPanel>
+                            <comp:SettingRow Label="Click limit"
+                                             Description="Stoppt nach N Klicks.">
+                                <Grid MinWidth="220">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <comp:MkCheckBox x:Name="EnableClickLimitCheckBox"
+                                                     Grid.Column="0"
+                                                     Text="Enable" />
+                                    <comp:MkTextBox x:Name="ClickLimitTextBox"
+                                                    Grid.Column="2" />
+                                </Grid>
+                            </comp:SettingRow>
+
+                            <comp:SettingRow Label="Time limit (s)"
+                                             Description="Stoppt nach maximaler Zeit in Sekunden.">
+                                <Grid MinWidth="220">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <comp:MkCheckBox x:Name="EnableTimeLimitCheckBox"
+                                                     Grid.Column="0"
+                                                     Text="Enable" />
+                                    <comp:MkTextBox x:Name="TimeLimitSecondsTextBox"
+                                                    Grid.Column="2" />
+                                </Grid>
+                            </comp:SettingRow>
+                        </StackPanel>
+                    </TabItem>
+
+                    <TabItem Header="Hotkey"
+                             Style="{StaticResource AppTabItemStyle}">
+                        <StackPanel>
+                            <comp:SettingRow Label="Configured"
+                                             Description="Aktuell registrierte Kombination.">
+                                <comp:MkBadge x:Name="HotkeyDisplayBadge"
+                                              MinWidth="220"
+                                              Label=""
+                                              ValueForeground="{StaticResource Brush.TextPrimary}" />
+                            </comp:SettingRow>
+
+                            <comp:SettingRow Label="Mode"
+                                             Description="Toggle startet/stoppt, Hold laeuft nur beim Halten.">
+                                <comp:MkSelectField x:Name="HotkeyModeComboBox" MinWidth="220" />
+                            </comp:SettingRow>
+
+                            <comp:SettingRow Label="Record hotkey"
+                                             Description="Neue Kombination aufzeichnen (ESC bricht ab).">
+                                <comp:MkButton x:Name="RecordHotkeyButton"
+                                               MinWidth="220"
+                                               Variant="Outline"
+                                               Text="Hotkey aufnehmen" />
+                            </comp:SettingRow>
+                        </StackPanel>
+                    </TabItem>
+                </TabControl>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</Window>
