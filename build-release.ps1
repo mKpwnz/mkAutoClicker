@@ -1,14 +1,9 @@
-param(
-    [ValidateSet("tiny", "onefile")]
-    [string]$Mode = "tiny"
-)
-
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $projectFile = Join-Path $PSScriptRoot "mkAutoClicker.csproj"
 if (-not (Test-Path -LiteralPath $projectFile)) {
-    throw "Projektdatei nicht gefunden: $projectFile"
+    throw "Project file not found: $projectFile"
 }
 
 $processNames = @("mkClickerWpfSingle", "mkAutoClicker")
@@ -19,40 +14,50 @@ foreach ($processName in $processNames) {
     }
 }
 
-$publishRoot = Join-Path $PSScriptRoot "bin\publish\win-x64"
-$targetDirName = if ($Mode -eq "onefile") { "framework-dependent-onefile" } else { "framework-dependent-tiny" }
-$outputDir = Join-Path $publishRoot $targetDirName
-if (Test-Path -LiteralPath $outputDir) {
-    Remove-Item -LiteralPath $outputDir -Recurse -Force
+[xml]$projectXml = Get-Content -LiteralPath $projectFile
+$version = $projectXml.Project.PropertyGroup.Version | Select-Object -First 1
+if ([string]::IsNullOrWhiteSpace($version)) {
+    $version = $projectXml.Project.PropertyGroup.VersionPrefix | Select-Object -First 1
 }
-New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
-
-if ($Mode -eq "onefile") {
-    Write-Host "Publish: framework-dependent (single EXE, runtime required)..."
-    & dotnet publish $projectFile `
-        -c Release `
-        -r win-x64 `
-        -p:SelfContained=false `
-        -p:PublishSingleFile=true `
-        -p:IncludeNativeLibrariesForSelfExtract=true `
-        -p:DebugType=None `
-        -p:DebugSymbols=false `
-        -p:PublishTrimmed=false `
-        -o $outputDir
-} else {
-    Write-Host "Publish: framework-dependent (tiny, multi-file, runtime required)..."
-    & dotnet publish $projectFile `
-        -c Release `
-        -r win-x64 `
-        -p:SelfContained=false `
-        -p:PublishSingleFile=false `
-        -p:DebugType=None `
-        -p:DebugSymbols=false `
-        -p:PublishTrimmed=false `
-        -o $outputDir
+if ([string]::IsNullOrWhiteSpace($version)) {
+    $version = "0.0.0"
 }
 
-$exePath = Join-Path $outputDir "mkClickerWpfSingle.exe"
+$publishRoot = Join-Path $PSScriptRoot "bin\publish\win-x64\framework-dependent-onefile"
+if (Test-Path -LiteralPath $publishRoot) {
+    Remove-Item -LiteralPath $publishRoot -Recurse -Force
+}
+New-Item -ItemType Directory -Path $publishRoot -Force | Out-Null
+
+Write-Host "Publish: framework-dependent single-file (runtime required)..."
+& dotnet publish $projectFile `
+    -c Release `
+    -r win-x64 `
+    -p:SelfContained=false `
+    -p:PublishSingleFile=true `
+    -p:IncludeNativeLibrariesForSelfExtract=true `
+    -p:DebugType=None `
+    -p:DebugSymbols=false `
+    -p:PublishTrimmed=false `
+    -o $publishRoot
+
+$sourceExe = Join-Path $publishRoot "mkClickerWpfSingle.exe"
+if (-not (Test-Path -LiteralPath $sourceExe)) {
+    throw "Expected output executable not found: $sourceExe"
+}
+
+$versionedExeName = "mkAutoClicker_{0}.exe" -f $version
+$versionedExePath = Join-Path $publishRoot $versionedExeName
+if (Test-Path -LiteralPath $versionedExePath) {
+    Remove-Item -LiteralPath $versionedExePath -Force
+}
+
+Rename-Item -LiteralPath $sourceExe -NewName $versionedExeName
+
+Get-ChildItem -LiteralPath $publishRoot -File |
+    Where-Object { $_.Name -ne $versionedExeName } |
+    Remove-Item -Force
+
 Write-Host ""
-Write-Host "Fertig. Artefakt:"
-Write-Host "- $exePath"
+Write-Host "Done. Artifact:"
+Write-Host "- $versionedExePath"

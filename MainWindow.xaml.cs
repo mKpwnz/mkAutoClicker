@@ -48,14 +48,14 @@ public partial class MainWindow : Window {
         this.holdModeTimer.Tick += this.HoldModeTimer_Tick;
 
         this.actionModes = new List<OptionItem<ActionType>> {
-            new OptionItem<ActionType>("Mouse Left", ActionType.MouseLeft),
-            new OptionItem<ActionType>("Mouse Middle", ActionType.MouseMiddle),
-            new OptionItem<ActionType>("Mouse Right", ActionType.MouseRight),
-            new OptionItem<ActionType>("Keyboard Key", ActionType.KeyboardKey)
+            new OptionItem<ActionType>(LocalizationService.GetString("Ui.ActionType.MouseLeft", "Mouse Left"), ActionType.MouseLeft),
+            new OptionItem<ActionType>(LocalizationService.GetString("Ui.ActionType.MouseMiddle", "Mouse Middle"), ActionType.MouseMiddle),
+            new OptionItem<ActionType>(LocalizationService.GetString("Ui.ActionType.MouseRight", "Mouse Right"), ActionType.MouseRight),
+            new OptionItem<ActionType>(LocalizationService.GetString("Ui.ActionType.KeyboardKey", "Keyboard Key"), ActionType.KeyboardKey)
         };
         this.hotkeyModes = new List<OptionItem<HotkeyMode>> {
-            new OptionItem<HotkeyMode>("Toggle", HotkeyMode.Toggle),
-            new OptionItem<HotkeyMode>("Hold", HotkeyMode.Hold)
+            new OptionItem<HotkeyMode>(LocalizationService.GetString("Ui.HotkeyMode.Toggle", "Toggle"), HotkeyMode.Toggle),
+            new OptionItem<HotkeyMode>(LocalizationService.GetString("Ui.HotkeyMode.Hold", "Hold"), HotkeyMode.Hold)
         };
         this.keyboardKeys = BuildKeyboardKeys();
 
@@ -70,7 +70,7 @@ public partial class MainWindow : Window {
         this.UpdateLimitEditors();
         this.UpdateActionButtons();
         this.UpdateStats(0, TimeSpan.Zero);
-        this.SetHeaderStatus("Idle");
+        this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.Idle", "Idle"));
 
         this.PreviewKeyDown += this.MainWindow_PreviewKeyDown;
         this.Closing += this.MainWindow_Closing;
@@ -102,8 +102,8 @@ public partial class MainWindow : Window {
 
         this.KeyboardKeyComboBox.ItemsSource = this.keyboardKeys;
         this.KeyboardKeyComboBox.DisplayMemberPath = nameof(KeyOption.Label);
-        KeyOption? defaultKey = this.keyboardKeys.FirstOrDefault(static item => item.VirtualKeyCode == 0x41);
-        this.KeyboardKeyComboBox.SelectedItem = defaultKey ?? this.keyboardKeys.First();
+        KeyOption? defaultKey = this.keyboardKeys.FirstOrDefault(static item => item.VirtualKeyCode == 0x41 && !item.IsGroupHeader);
+        this.KeyboardKeyComboBox.SelectedItem = defaultKey ?? this.keyboardKeys.First(static item => !item.IsGroupHeader);
 
         this.ClicksPerSecondTextBox.Text = FormatDouble(10.0);
         this.IntervalMsTextBox.Text = FormatDouble(100.0);
@@ -160,7 +160,7 @@ public partial class MainWindow : Window {
         _ = e;
 
         this.isCapturingHotkey = true;
-        this.SetHeaderStatus("Hotkey aufnehmen: Kombination jetzt druecken (ESC = Abbruch).");
+        this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyCapturePrompt", "Recording hotkey: press combination now (ESC to cancel)."));
         _ = this.Focus();
     }
 
@@ -246,7 +246,7 @@ public partial class MainWindow : Window {
 
         this.isRunning = true;
         this.UpdateActionButtons();
-        this.SetHeaderStatus("Running");
+        this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.Running", "Running"));
         this.UpdateStats(0, TimeSpan.Zero);
 
         this.runCancellation = new CancellationTokenSource();
@@ -272,7 +272,7 @@ public partial class MainWindow : Window {
             _ = this.Dispatcher.BeginInvoke(() => {
                 this.isRunning = false;
                 this.UpdateActionButtons();
-                this.SetHeaderStatus($"Fehler: {ex.Message}");
+                this.SetHeaderStatus(LocalizationService.Format("Ui.Status.ErrorPrefix", ex.Message));
             });
             return;
         }
@@ -281,9 +281,9 @@ public partial class MainWindow : Window {
             this.isRunning = false;
             this.UpdateActionButtons();
             this.SetHeaderStatus(summary.Reason switch {
-                StopReason.ClickLimitReached => "Stopped (Click-Limit erreicht)",
-                StopReason.TimeLimitReached => "Stopped (Time-Limit erreicht)",
-                _ => "Stopped"
+                StopReason.ClickLimitReached => LocalizationService.GetString("Ui.Status.StoppedClickLimit", "Stopped (click limit reached)"),
+                StopReason.TimeLimitReached => LocalizationService.GetString("Ui.Status.StoppedTimeLimit", "Stopped (time limit reached)"),
+                _ => LocalizationService.GetString("Ui.Status.Stopped", "Stopped")
             });
             this.UpdateStats(summary.ClickCount, summary.Elapsed);
         });
@@ -321,7 +321,7 @@ public partial class MainWindow : Window {
         }
 
         int virtualKeyCode = 0;
-        if (actionType == ActionType.KeyboardKey && this.KeyboardKeyComboBox.SelectedItem is KeyOption keyOption) {
+        if (actionType == ActionType.KeyboardKey && this.KeyboardKeyComboBox.SelectedItem is KeyOption keyOption && !keyOption.IsGroupHeader) {
             virtualKeyCode = keyOption.VirtualKeyCode;
         }
 
@@ -394,7 +394,7 @@ public partial class MainWindow : Window {
 
         bool registered = this.hotkeyService.Register(this.hotkeyConfig);
         if (!registered) {
-            this.SetHeaderStatus("Hotkey konnte nicht registriert werden. Andere Kombination waehlen.");
+            this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyRegisterFailed", "Hotkey registration failed. Choose another combination."));
         }
     }
 
@@ -422,18 +422,18 @@ public partial class MainWindow : Window {
         Key key = e.Key == Key.System ? e.SystemKey : e.Key;
         if (key == Key.Escape) {
             this.isCapturingHotkey = false;
-            this.SetHeaderStatus("Hotkey-Aufnahme abgebrochen.");
+            this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyCaptureCancelled", "Hotkey capture cancelled."));
             return;
         }
 
         if (IsModifierKey(key)) {
-            this.SetHeaderStatus("Bitte mindestens eine Nicht-Modifier-Taste druecken.");
+            this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyNeedNonModifier", "Please press at least one non-modifier key."));
             return;
         }
 
         HotkeyModifiers modifiers = ReadModifiers();
         if (modifiers == HotkeyModifiers.None) {
-            this.SetHeaderStatus("Hotkey muss mindestens einen Modifier enthalten.");
+            this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyNeedModifier", "Hotkey must include at least one modifier."));
             return;
         }
 
@@ -446,7 +446,7 @@ public partial class MainWindow : Window {
 
         this.isCapturingHotkey = false;
         this.RegisterHotkey();
-        this.SetHeaderStatus("Hotkey aktualisiert.");
+        this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyUpdated", "Hotkey updated."));
     }
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
@@ -497,13 +497,15 @@ public partial class MainWindow : Window {
     }
 
     private void UpdateStats(int clickCount, TimeSpan elapsed) {
-        this.ClicksTextBlock.Text = $"Clicks: {clickCount.ToString(CultureInfo.CurrentCulture)}";
-        this.ElapsedTextBlock.Text = $"Elapsed: {elapsed.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture)}";
+        this.ClicksTextBlock.Text = LocalizationService.Format("Ui.Header.Clicks.Format", clickCount.ToString(CultureInfo.CurrentCulture));
+        this.ElapsedTextBlock.Text = LocalizationService.Format("Ui.Header.Elapsed.Format", elapsed.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture));
     }
 
     private void SetHeaderStatus(string text) {
-        string safeText = string.IsNullOrWhiteSpace(text) ? "Idle" : text;
-        this.StatusTextBlock.Text = $"Status: {safeText}";
+        string safeText = string.IsNullOrWhiteSpace(text)
+            ? LocalizationService.GetString("Ui.Status.Idle", "Idle")
+            : text;
+        this.StatusTextBlock.Text = LocalizationService.Format("Ui.Header.Status.Format", safeText);
     }
 
     private void ApplyAutoHeight() {
@@ -628,9 +630,9 @@ public partial class MainWindow : Window {
     }
 
     private void SelectKeyboardKey(int virtualKeyCode) {
-        KeyOption? option = this.keyboardKeys.FirstOrDefault(x => x.VirtualKeyCode == virtualKeyCode);
+        KeyOption? option = this.keyboardKeys.FirstOrDefault(x => x.VirtualKeyCode == virtualKeyCode && !x.IsGroupHeader);
         if (option is null) {
-            option = this.keyboardKeys.FirstOrDefault(static x => x.VirtualKeyCode == 0x41);
+            option = this.keyboardKeys.FirstOrDefault(static x => x.VirtualKeyCode == 0x41 && !x.IsGroupHeader);
         }
 
         if (option is not null) {
@@ -639,36 +641,105 @@ public partial class MainWindow : Window {
     }
 
     private static List<KeyOption> BuildKeyboardKeys() {
-        HashSet<int> seenVirtualKeys = new HashSet<int>();
-        List<KeyOption> options = new List<KeyOption>(180);
+        List<KeyOption> options = new List<KeyOption>(220);
+        HashSet<int> usedVirtualKeys = new HashSet<int>();
 
+        AddGroup(
+            options,
+            LocalizationService.GetString("Ui.Keyboard.Group.Alphabet", "Alphabet"),
+            Enumerable.Range((int)Key.A, (int)Key.Z - (int)Key.A + 1).Select(static value => (Key)value),
+            usedVirtualKeys);
+
+        AddGroup(
+            options,
+            LocalizationService.GetString("Ui.Keyboard.Group.Numbers", "Numbers"),
+            Enumerable.Range((int)Key.D0, (int)Key.D9 - (int)Key.D0 + 1).Select(static value => (Key)value),
+            usedVirtualKeys);
+
+        AddGroup(
+            options,
+            LocalizationService.GetString("Ui.Keyboard.Group.FunctionKeys", "Function Keys"),
+            Enumerable.Range((int)Key.F1, (int)Key.F12 - (int)Key.F1 + 1).Select(static value => (Key)value),
+            usedVirtualKeys);
+
+        AddGroup(
+            options,
+            LocalizationService.GetString("Ui.Keyboard.Group.Numpad", "Numpad"),
+            new[] {
+                Key.NumPad0, Key.NumPad1, Key.NumPad2, Key.NumPad3, Key.NumPad4,
+                Key.NumPad5, Key.NumPad6, Key.NumPad7, Key.NumPad8, Key.NumPad9,
+                Key.Decimal, Key.Add, Key.Subtract, Key.Multiply, Key.Divide
+            },
+            usedVirtualKeys);
+
+        List<KeyOption> otherKeys = new List<KeyOption>(120);
         foreach (Key key in Enum.GetValues<Key>()) {
-            if (IsModifierKey(key)) {
+            if (!TryCreateKeyOption(key, usedVirtualKeys, out KeyOption option)) {
                 continue;
             }
 
-            int vkCode;
-            try {
-                vkCode = KeyInterop.VirtualKeyFromKey(key);
-            }
-            catch {
-                continue;
-            }
-
-            if (vkCode <= 0 || vkCode > 255) {
-                continue;
-            }
-
-            if (!seenVirtualKeys.Add(vkCode)) {
-                continue;
-            }
-
-            string label = $"{key} (VK 0x{vkCode:X2})";
-            options.Add(new KeyOption(vkCode, label));
+            otherKeys.Add(option);
         }
 
-        options.Sort(static (left, right) => StringComparer.Ordinal.Compare(left.Label, right.Label));
+        otherKeys.Sort(static (left, right) => StringComparer.OrdinalIgnoreCase.Compare(left.Label, right.Label));
+        if (otherKeys.Count > 0) {
+            options.Add(KeyOption.CreateGroupHeader(LocalizationService.GetString("Ui.Keyboard.Group.Other", "Other Keys")));
+            options.AddRange(otherKeys);
+        }
+
         return options;
+    }
+
+    private static void AddGroup(List<KeyOption> target, string headerLabel, IEnumerable<Key> keys, HashSet<int> usedVirtualKeys) {
+        List<KeyOption> groupItems = new List<KeyOption>();
+        foreach (Key key in keys) {
+            if (!TryCreateKeyOption(key, usedVirtualKeys, out KeyOption option)) {
+                continue;
+            }
+
+            groupItems.Add(option);
+        }
+
+        if (groupItems.Count == 0) {
+            return;
+        }
+
+        target.Add(KeyOption.CreateGroupHeader(headerLabel));
+        target.AddRange(groupItems);
+    }
+
+    private static bool TryCreateKeyOption(Key key, HashSet<int> usedVirtualKeys, out KeyOption option) {
+        option = null!;
+
+        if (key == Key.None || IsModifierKey(key)) {
+            return false;
+        }
+
+        int virtualKeyCode;
+        try {
+            virtualKeyCode = KeyInterop.VirtualKeyFromKey(key);
+        }
+        catch {
+            return false;
+        }
+
+        if (virtualKeyCode <= 0 || virtualKeyCode > 255) {
+            return false;
+        }
+
+        if (!usedVirtualKeys.Add(virtualKeyCode)) {
+            return false;
+        }
+
+        string keyDisplayName = key switch {
+            >= Key.A and <= Key.Z => key.ToString(),
+            >= Key.D0 and <= Key.D9 => ((char)('0' + ((int)key - (int)Key.D0))).ToString(CultureInfo.InvariantCulture),
+            >= Key.NumPad0 and <= Key.NumPad9 => $"Num {(int)key - (int)Key.NumPad0}",
+            _ => key.ToString()
+        };
+
+        option = new KeyOption(virtualKeyCode, $"{keyDisplayName} (VK 0x{virtualKeyCode:X2})");
+        return true;
     }
 
     private static string FormatHotkey(HotkeyConfig config) {

@@ -2,8 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace mkAutoClicker;
 
-public sealed class NativeInput
-{
+public sealed class NativeInput {
     private const int InputMouse = 0;
     private const int InputKeyboard = 1;
 
@@ -16,10 +15,8 @@ public sealed class NativeInput
 
     private const uint KeyEventUp = 0x0002;
 
-    public void SendDown(ActionType actionType, int virtualKeyCode)
-    {
-        NativeInputData input = actionType switch
-        {
+    public void SendDown(ActionType actionType, int virtualKeyCode) {
+        var input = actionType switch {
             ActionType.MouseLeft => CreateMouseInput(MouseEventLeftDown),
             ActionType.MouseMiddle => CreateMouseInput(MouseEventMiddleDown),
             ActionType.MouseRight => CreateMouseInput(MouseEventRightDown),
@@ -30,10 +27,8 @@ public sealed class NativeInput
         SendSingleInput(input);
     }
 
-    public void SendUp(ActionType actionType, int virtualKeyCode)
-    {
-        NativeInputData input = actionType switch
-        {
+    public void SendUp(ActionType actionType, int virtualKeyCode) {
+        var input = actionType switch {
             ActionType.MouseLeft => CreateMouseInput(MouseEventLeftUp),
             ActionType.MouseMiddle => CreateMouseInput(MouseEventMiddleUp),
             ActionType.MouseRight => CreateMouseInput(MouseEventRightUp),
@@ -44,26 +39,20 @@ public sealed class NativeInput
         SendSingleInput(input);
     }
 
-    private static void SendSingleInput(NativeInputData input)
-    {
-        NativeInputData[] inputs = new[] { input };
-        uint sent = SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<NativeInputData>());
-        if (sent != inputs.Length)
-        {
-            int error = Marshal.GetLastWin32Error();
+    private static void SendSingleInput(NativeInputData input) {
+        var inputs = new[] { input };
+        var sent = SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<NativeInputData>());
+        if (sent != inputs.Length) {
+            var error = Marshal.GetLastWin32Error();
             throw new InvalidOperationException($"SendInput failed with Win32 error {error}.");
         }
     }
 
-    private static NativeInputData CreateMouseInput(uint flags)
-    {
-        return new NativeInputData
-        {
+    private static NativeInputData CreateMouseInput(uint flags) {
+        return new NativeInputData {
             Type = InputMouse,
-            Data = new InputUnion
-            {
-                MouseInput = new MouseInput
-                {
+            Data = new InputUnion {
+                MouseInput = new MouseInput {
                     DwFlags = flags,
                     DwExtraInfo = IntPtr.Zero
                 }
@@ -71,15 +60,11 @@ public sealed class NativeInput
         };
     }
 
-    private static NativeInputData CreateKeyboardInput(ushort vk, uint flags)
-    {
-        return new NativeInputData
-        {
+    private static NativeInputData CreateKeyboardInput(ushort vk, uint flags) {
+        return new NativeInputData {
             Type = InputKeyboard,
-            Data = new InputUnion
-            {
-                KeyboardInput = new KeyboardInput
-                {
+            Data = new InputUnion {
+                KeyboardInput = new KeyboardInput {
                     WVk = vk,
                     DwFlags = flags,
                     DwExtraInfo = IntPtr.Zero
@@ -89,25 +74,20 @@ public sealed class NativeInput
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct NativeInputData
-    {
+    private struct NativeInputData {
         public int Type;
         public InputUnion Data;
     }
 
     [StructLayout(LayoutKind.Explicit)]
-    private struct InputUnion
-    {
-        [FieldOffset(0)]
-        public MouseInput MouseInput;
+    private struct InputUnion {
+        [FieldOffset(0)] public MouseInput MouseInput;
 
-        [FieldOffset(0)]
-        public KeyboardInput KeyboardInput;
+        [FieldOffset(0)] public KeyboardInput KeyboardInput;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct MouseInput
-    {
+    private struct MouseInput {
         public int Dx;
         public int Dy;
         public uint MouseData;
@@ -117,8 +97,7 @@ public sealed class NativeInput
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct KeyboardInput
-    {
+    private struct KeyboardInput {
         public ushort WVk;
         public ushort WScan;
         public uint DwFlags;
