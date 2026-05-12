@@ -1,3 +1,7 @@
+param(
+    [string]$Version = ""
+)
+
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
@@ -14,13 +18,16 @@ foreach ($processName in $processNames) {
     }
 }
 
-[xml]$projectXml = Get-Content -LiteralPath $projectFile
-$version = $projectXml.Project.PropertyGroup.Version | Select-Object -First 1
-if ([string]::IsNullOrWhiteSpace($version)) {
-    $version = $projectXml.Project.PropertyGroup.VersionPrefix | Select-Object -First 1
-}
-if ([string]::IsNullOrWhiteSpace($version)) {
-    $version = "0.0.0"
+[string]$resolvedVersion = $Version
+if ([string]::IsNullOrWhiteSpace($resolvedVersion)) {
+    [xml]$projectXml = Get-Content -LiteralPath $projectFile
+    $resolvedVersion = $projectXml.Project.PropertyGroup.Version | Select-Object -First 1
+    if ([string]::IsNullOrWhiteSpace($resolvedVersion)) {
+        $resolvedVersion = $projectXml.Project.PropertyGroup.VersionPrefix | Select-Object -First 1
+    }
+    if ([string]::IsNullOrWhiteSpace($resolvedVersion)) {
+        $resolvedVersion = "0.0.0"
+    }
 }
 
 $publishRoot = Join-Path $PSScriptRoot "bin\publish\win-x64\framework-dependent-onefile"
@@ -46,7 +53,7 @@ if (-not (Test-Path -LiteralPath $sourceExe)) {
     throw "Expected output executable not found: $sourceExe"
 }
 
-$versionedExeName = "mkAutoClicker_{0}.exe" -f $version
+$versionedExeName = "mkAutoClicker_{0}.exe" -f $resolvedVersion
 $versionedExePath = Join-Path $publishRoot $versionedExeName
 if (Test-Path -LiteralPath $versionedExePath) {
     Remove-Item -LiteralPath $versionedExePath -Force

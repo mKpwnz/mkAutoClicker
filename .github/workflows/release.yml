@@ -19,39 +19,63 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
             - name: Setup .NET
               uses: actions/setup-dotnet@v4
               with:
                   dotnet-version: 8.0.x
 
-            - name: Build release artifact
-              shell: pwsh
-              run: .\build-release.ps1
-
-            - name: Resolve version and artifact
-              id: meta
+            - name: Resolve semantic version
+              id: version
               shell: pwsh
               run: |
                   [xml]$project = Get-Content .\mkAutoClicker.csproj
-                  $version = $project.Project.PropertyGroup.Version | Select-Object -First 1
-                  if ([string]::IsNullOrWhiteSpace($version)) {
-                      $version = $project.Project.PropertyGroup.VersionPrefix | Select-Object -First 1
+                  $rawVersion = $project.Project.PropertyGroup.Version | Select-Object -First 1
+                  if ([string]::IsNullOrWhiteSpace($rawVersion)) {
+                      $rawVersion = $project.Project.PropertyGroup.VersionPrefix | Select-Object -First 1
                   }
-                  if ([string]::IsNullOrWhiteSpace($version)) {
-                      $version = "0.0.0"
+                  if ([string]::IsNullOrWhiteSpace($rawVersion)) {
+                      $rawVersion = "1.0.0"
                   }
 
-                  $artifactPath = Resolve-Path ".\bin\publish\win-x64\framework-dependent-onefile\mkAutoClicker_${version}.exe"
+                  $match = [regex]::Match($rawVersion, '^(?<major>\d+)\.(?<minor>\d+)')
+                  if (-not $match.Success) {
+                      throw "Unable to parse major/minor version from '$rawVersion'."
+                  }
+
+                  $major = [int]$match.Groups["major"].Value
+                  $minor = [int]$match.Groups["minor"].Value
+                  $tagPrefix = "v$major.$minor."
+
+                  git fetch --tags --force
+                  $tags = git tag --list "$tagPrefix*"
+                  $maxPatch = -1
+                  foreach ($tag in $tags) {
+                      if ($tag -match "^v$major\.$minor\.(\d+)$") {
+                          $patch = [int]$matches[1]
+                          if ($patch -gt $maxPatch) {
+                              $maxPatch = $patch
+                          }
+                      }
+                  }
+
+                  $nextPatch = if ($maxPatch -lt 0) { 0 } else { $maxPatch + 1 }
+                  $version = "$major.$minor.$nextPatch"
+                  $tagName = "v$version"
 
                   "version=$version" >> $env:GITHUB_OUTPUT
-                  "artifact_path=$artifactPath" >> $env:GITHUB_OUTPUT
-                  "tag_name=v$version-build-${{ github.run_number }}" >> $env:GITHUB_OUTPUT
+                  "tag_name=$tagName" >> $env:GITHUB_OUTPUT
+
+            - name: Build release artifact
+              shell: pwsh
+              run: .\build-release.ps1 -Version "${{ steps.version.outputs.version }}"
 
             - name: Publish GitHub release
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: ${{ steps.meta.outputs.tag_name }}
-                  name: mKAutoClicker v${{ steps.meta.outputs.version }} (build ${{ github.run_number }})
-                  files: ${{ steps.meta.outputs.artifact_path }}
+                  tag_name: ${{ steps.version.outputs.tag_name }}
+                  name: mKAutoClicker v${{ steps.version.outputs.version }}
+                  files: .\bin\publish\win-x64\framework-dependent-onefile\mkAutoClicker_${{ steps.version.outputs.version }}.exe
                   generate_release_notes: true
