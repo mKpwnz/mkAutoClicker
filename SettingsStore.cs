@@ -3,35 +3,27 @@ using System.Text.Json;
 
 namespace mkAutoClicker;
 
-public static class SettingsStore
-{
-    private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
-    {
+public static class SettingsStore {
+    private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions {
         WriteIndented = true
     };
 
-    public static AppSettings Load()
-    {
+    public static AppSettings Load() {
         string path = GetPath();
-        if (!File.Exists(path))
-        {
+        if (!File.Exists(path)) {
             return new AppSettings();
         }
 
-        try
-        {
+        try {
             string json = File.ReadAllText(path);
             AppSettings? settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
             return settings ?? new AppSettings();
-        }
-        catch
-        {
+        } catch {
             return new AppSettings();
         }
     }
 
-    public static void Save(AppSettings settings)
-    {
+    public static void Save(AppSettings settings) {
         ArgumentNullException.ThrowIfNull(settings);
 
         string path = GetPath();
@@ -42,8 +34,7 @@ public static class SettingsStore
         File.WriteAllText(path, json);
     }
 
-    public static string GetPath()
-    {
+    public static string GetPath() {
         string baseDirectory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         return Path.Combine(baseDirectory, "mkClickerWpfSingle", "settings.json");
     }

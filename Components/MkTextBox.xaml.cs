@@ -1,12 +1,12 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.ComponentModel;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace mkAutoClicker.Components;
 
-public partial class MkTextBox : UserControl
-{
+public partial class MkTextBox : UserControl {
     public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
         nameof(Text),
         typeof(string),
@@ -16,148 +16,120 @@ public partial class MkTextBox : UserControl
             FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
             OnTextPropertyChanged));
 
-    private bool isSynchronizingText;
-    private bool isHovered;
-    private bool isFocused;
+    private bool _isFocused;
+    private bool _isHovered;
 
-    public string Text
-    {
-        get => (string)this.GetValue(TextProperty);
-        set => this.SetValue(TextProperty, value);
+    private bool _isSynchronizingText;
+
+    public MkTextBox() {
+        InitializeComponent();
+        InnerTextBox.TextChanged += InnerTextBox_TextChanged;
+        MouseEnter += Root_MouseEnter;
+        MouseLeave += Root_MouseLeave;
+        InnerTextBox.GotKeyboardFocus += InnerTextBox_GotKeyboardFocus;
+        InnerTextBox.LostKeyboardFocus += InnerTextBox_LostKeyboardFocus;
+
+        if (DesignerProperties.GetIsInDesignMode(this)) Text = "Text";
+
+        SynchronizeInnerText(Text);
+        ApplyBorderState();
+    }
+
+    public string Text {
+        get => (string)GetValue(TextProperty);
+        set => SetValue(TextProperty, value);
     }
 
     public event TextChangedEventHandler? TextChanged;
 
-    public MkTextBox()
-    {
-        this.InitializeComponent();
-        this.InnerTextBox.TextChanged += this.InnerTextBox_TextChanged;
-        this.MouseEnter += this.Root_MouseEnter;
-        this.MouseLeave += this.Root_MouseLeave;
-        this.InnerTextBox.GotKeyboardFocus += this.InnerTextBox_GotKeyboardFocus;
-        this.InnerTextBox.LostKeyboardFocus += this.InnerTextBox_LostKeyboardFocus;
-
-        if (DesignerProperties.GetIsInDesignMode(this))
-        {
-            this.Text = "Text";
-        }
-
-        this.SynchronizeInnerText(this.Text);
-        this.ApplyBorderState();
-    }
-
-    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
-    {
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e) {
         base.OnPropertyChanged(e);
 
-        if (e.Property == IsEnabledProperty)
-        {
-            this.InnerTextBox.IsEnabled = this.IsEnabled;
-            this.ApplyBorderState();
+        if (e.Property == IsEnabledProperty) {
+            InnerTextBox.IsEnabled = IsEnabled;
+            ApplyBorderState();
         }
     }
 
-    private void InnerTextBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
+    private void InnerTextBox_TextChanged(object sender, TextChangedEventArgs e) {
         _ = sender;
 
-        if (this.isSynchronizingText)
-        {
-            return;
-        }
+        if (_isSynchronizingText) return;
 
-        this.isSynchronizingText = true;
-        this.SetCurrentValue(TextProperty, this.InnerTextBox.Text);
-        this.isSynchronizingText = false;
-        this.TextChanged?.Invoke(this, e);
+        _isSynchronizingText = true;
+        SetCurrentValue(TextProperty, InnerTextBox.Text);
+        _isSynchronizingText = false;
+        TextChanged?.Invoke(this, e);
     }
 
-    private static void OnTextPropertyChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
-    {
-        if (dependencyObject is MkTextBox control)
-        {
-            string text = args.NewValue as string ?? string.Empty;
+    private static void OnTextPropertyChanged(DependencyObject dependencyObject,
+        DependencyPropertyChangedEventArgs args) {
+        if (dependencyObject is MkTextBox control) {
+            var text = args.NewValue as string ?? string.Empty;
             control.SynchronizeInnerText(text);
         }
     }
 
-    private void SynchronizeInnerText(string text)
-    {
-        if (this.isSynchronizingText)
-        {
+    private void SynchronizeInnerText(string text) {
+        if (_isSynchronizingText) return;
+
+        var safeText = text ?? string.Empty;
+        if (InnerTextBox.Text == safeText) return;
+
+        _isSynchronizingText = true;
+        InnerTextBox.Text = safeText;
+        _isSynchronizingText = false;
+    }
+
+    private void Root_MouseEnter(object sender, MouseEventArgs e) {
+        _ = sender;
+        _ = e;
+        _isHovered = true;
+        ApplyBorderState();
+    }
+
+    private void Root_MouseLeave(object sender, MouseEventArgs e) {
+        _ = sender;
+        _ = e;
+        _isHovered = false;
+        ApplyBorderState();
+    }
+
+    private void InnerTextBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) {
+        _ = sender;
+        _ = e;
+        _isFocused = true;
+        ApplyBorderState();
+    }
+
+    private void InnerTextBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) {
+        _ = sender;
+        _ = e;
+        _isFocused = false;
+        ApplyBorderState();
+    }
+
+    private void ApplyBorderState() {
+        var defaultBorder = TryFindResource("Brush.AppBorder") as Brush ?? Brushes.Gray;
+        var accentBorder = TryFindResource("Brush.Accent") as Brush ?? Brushes.DodgerBlue;
+        var fixedBorderThickness = new Thickness(1);
+
+        if (!IsEnabled) {
+            InputBorder.BorderBrush = defaultBorder;
+            InputBorder.BorderThickness = fixedBorderThickness;
+            InputBorder.Opacity = 0.55;
+            FocusRingBorder.Opacity = 0.0;
             return;
         }
 
-        string safeText = text ?? string.Empty;
-        if (this.InnerTextBox.Text == safeText)
-        {
-            return;
-        }
+        InputBorder.Opacity = 1.0;
+        InputBorder.BorderThickness = fixedBorderThickness;
 
-        this.isSynchronizingText = true;
-        this.InnerTextBox.Text = safeText;
-        this.isSynchronizingText = false;
-    }
-
-    private void Root_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
-    {
-        _ = sender;
-        _ = e;
-        this.isHovered = true;
-        this.ApplyBorderState();
-    }
-
-    private void Root_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
-    {
-        _ = sender;
-        _ = e;
-        this.isHovered = false;
-        this.ApplyBorderState();
-    }
-
-    private void InnerTextBox_GotKeyboardFocus(object sender, System.Windows.Input.KeyboardFocusChangedEventArgs e)
-    {
-        _ = sender;
-        _ = e;
-        this.isFocused = true;
-        this.ApplyBorderState();
-    }
-
-    private void InnerTextBox_LostKeyboardFocus(object sender, System.Windows.Input.KeyboardFocusChangedEventArgs e)
-    {
-        _ = sender;
-        _ = e;
-        this.isFocused = false;
-        this.ApplyBorderState();
-    }
-
-    private void ApplyBorderState()
-    {
-        Brush defaultBorder = this.TryFindResource("Brush.AppBorder") as Brush ?? Brushes.Gray;
-        Brush accentBorder = this.TryFindResource("Brush.Accent") as Brush ?? Brushes.DodgerBlue;
-        Thickness fixedBorderThickness = new Thickness(1);
-
-        if (!this.IsEnabled)
-        {
-            this.InputBorder.BorderBrush = defaultBorder;
-            this.InputBorder.BorderThickness = fixedBorderThickness;
-            this.InputBorder.Opacity = 0.55;
-            this.FocusRingBorder.Opacity = 0.0;
-            return;
-        }
-
-        this.InputBorder.Opacity = 1.0;
-        this.InputBorder.BorderThickness = fixedBorderThickness;
-
-        if (this.isHovered || this.isFocused)
-        {
-            this.InputBorder.BorderBrush = accentBorder;
-        }
+        if (_isHovered || _isFocused)
+            InputBorder.BorderBrush = accentBorder;
         else
-        {
-            this.InputBorder.BorderBrush = defaultBorder;
-        }
+            InputBorder.BorderBrush = defaultBorder;
 
-        this.FocusRingBorder.Opacity = this.isFocused ? 0.35 : 0.0;
+        FocusRingBorder.Opacity = _isFocused ? 0.35 : 0.0;
     }
 }

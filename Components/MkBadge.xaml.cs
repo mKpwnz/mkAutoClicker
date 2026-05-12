@@ -4,8 +4,7 @@ using System.Windows.Media;
 
 namespace mkAutoClicker.Components;
 
-public partial class MkBadge : UserControl
-{
+public partial class MkBadge : UserControl {
     public static readonly DependencyProperty LabelProperty = DependencyProperty.Register(
         nameof(Label),
         typeof(string),
@@ -24,26 +23,22 @@ public partial class MkBadge : UserControl
         typeof(MkBadge),
         new PropertyMetadata(Brushes.White));
 
-    public string Label
-    {
+    public string Label {
         get => (string)this.GetValue(LabelProperty);
         set => this.SetValue(LabelProperty, value);
     }
 
-    public string Value
-    {
+    public string Value {
         get => (string)this.GetValue(ValueProperty);
         set => this.SetValue(ValueProperty, value);
     }
 
-    public Brush ValueForeground
-    {
+    public Brush ValueForeground {
         get => (Brush)this.GetValue(ValueForegroundProperty);
         set => this.SetValue(ValueForegroundProperty, value);
     }
 
-    public MkBadge()
-    {
+    public MkBadge() {
         this.InitializeComponent();
     }
 }

@@ -23,12 +23,12 @@ public class SettingRow : ContentControl {
     }
 
     public string Label {
-        get => (string)this.GetValue(LabelProperty);
-        set => this.SetValue(LabelProperty, value);
+        get => (string)GetValue(LabelProperty);
+        set => SetValue(LabelProperty, value);
     }
 
     public string Description {
-        get => (string)this.GetValue(DescriptionProperty);
-        set => this.SetValue(DescriptionProperty, value);
+        get => (string)GetValue(DescriptionProperty);
+        set => SetValue(DescriptionProperty, value);
     }
 }
