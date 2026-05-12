@@ -1,9 +1,7 @@
 namespace mkAutoClicker;
 
-public static class Validation
-{
-    public static IReadOnlyList<string> Validate(ClickProfile profile)
-    {
+public static class Validation {
+    public static IReadOnlyList<string> Validate(ClickProfile profile) {
         ArgumentNullException.ThrowIfNull(profile);
 
         List<string> errors = new List<string>(8);

@@ -1,6 +1,8 @@
+using System.ComponentModel;
 using System.Globalization;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
@@ -13,317 +15,306 @@ public partial class MainWindow : Window {
     private const double MinimumIntervalMilliseconds = 1.0;
     private const double MaximumIntervalMilliseconds = 10000.0;
 
+    private readonly List<OptionItem<ActionType>> _actionModes;
 
-    private readonly AutoClickerEngine engine;
-    private readonly GlobalHotkeyService hotkeyService;
-    private readonly DispatcherTimer holdModeTimer;
 
-    private readonly List<OptionItem<ActionType>> actionModes;
-    private readonly List<OptionItem<HotkeyMode>> hotkeyModes;
-    private readonly List<KeyOption> keyboardKeys;
+    private readonly AutoClickerEngine _engine;
+    private readonly DispatcherTimer _holdModeTimer;
+    private readonly List<OptionItem<HotkeyMode>> _hotkeyModes;
+    private readonly GlobalHotkeyService _hotkeyService;
+    private readonly List<KeyOption> _keyboardKeys;
 
-    private HwndSource? windowSource;
-    private CancellationTokenSource? runCancellation;
+    private HotkeyConfig _hotkeyConfig;
+    private bool _isApplyingAutoHeight;
+    private bool _isCapturingHotkey;
 
-    private HotkeyConfig hotkeyConfig;
+    private bool _isRunning;
+    private bool _isSynchronizingRateFields;
+    private bool _isWindowReady;
+    private DateTime _lastHotkeyPressUtc = DateTime.MinValue;
+    private CancellationTokenSource? _runCancellation;
 
-    private bool isRunning;
-    private bool isCapturingHotkey;
-    private bool isSynchronizingRateFields;
-    private bool isWindowReady;
-    private bool isApplyingAutoHeight;
-    private DateTime lastHotkeyPressUtc = DateTime.MinValue;
+    private HwndSource? _windowSource;
 
     public MainWindow() {
-        this.InitializeComponent();
-        this.MaxHeight = SystemParameters.WorkArea.Height;
+        InitializeComponent();
+        MaxHeight = SystemParameters.WorkArea.Height;
 
-        this.engine = new AutoClickerEngine();
-        this.hotkeyService = new GlobalHotkeyService();
-        this.hotkeyService.Pressed += this.HotkeyService_Pressed;
+        _engine = new AutoClickerEngine();
+        _hotkeyService = new GlobalHotkeyService();
+        _hotkeyService.Pressed += HotkeyService_Pressed;
 
-        this.holdModeTimer = new DispatcherTimer {
+        _holdModeTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(35)
         };
-        this.holdModeTimer.Tick += this.HoldModeTimer_Tick;
+        _holdModeTimer.Tick += HoldModeTimer_Tick;
 
-        this.actionModes = new List<OptionItem<ActionType>> {
-            new OptionItem<ActionType>(LocalizationService.GetString("Ui.ActionType.MouseLeft", "Mouse Left"), ActionType.MouseLeft),
-            new OptionItem<ActionType>(LocalizationService.GetString("Ui.ActionType.MouseMiddle", "Mouse Middle"), ActionType.MouseMiddle),
-            new OptionItem<ActionType>(LocalizationService.GetString("Ui.ActionType.MouseRight", "Mouse Right"), ActionType.MouseRight),
-            new OptionItem<ActionType>(LocalizationService.GetString("Ui.ActionType.KeyboardKey", "Keyboard Key"), ActionType.KeyboardKey)
+        _actionModes = new List<OptionItem<ActionType>> {
+            new(LocalizationService.GetString("Ui.ActionType.MouseLeft", "Mouse Left"), ActionType.MouseLeft),
+            new(LocalizationService.GetString("Ui.ActionType.MouseMiddle", "Mouse Middle"), ActionType.MouseMiddle),
+            new(LocalizationService.GetString("Ui.ActionType.MouseRight", "Mouse Right"), ActionType.MouseRight),
+            new(LocalizationService.GetString("Ui.ActionType.KeyboardKey", "Keyboard Key"), ActionType.KeyboardKey)
         };
-        this.hotkeyModes = new List<OptionItem<HotkeyMode>> {
-            new OptionItem<HotkeyMode>(LocalizationService.GetString("Ui.HotkeyMode.Toggle", "Toggle"), HotkeyMode.Toggle),
-            new OptionItem<HotkeyMode>(LocalizationService.GetString("Ui.HotkeyMode.Hold", "Hold"), HotkeyMode.Hold)
+        _hotkeyModes = new List<OptionItem<HotkeyMode>> {
+            new(LocalizationService.GetString("Ui.HotkeyMode.Toggle", "Toggle"), HotkeyMode.Toggle),
+            new(LocalizationService.GetString("Ui.HotkeyMode.Hold", "Hold"), HotkeyMode.Hold)
         };
-        this.keyboardKeys = BuildKeyboardKeys();
+        _keyboardKeys = BuildKeyboardKeys();
 
-        this.hotkeyConfig = new HotkeyConfig {
+        _hotkeyConfig = new HotkeyConfig {
             Mode = HotkeyMode.Toggle,
             Modifiers = HotkeyModifiers.Control | HotkeyModifiers.Alt,
             VirtualKeyCode = 0x75
         };
 
-        this.InitializeControls();
-        this.LoadSettings();
-        this.UpdateLimitEditors();
-        this.UpdateActionButtons();
-        this.UpdateStats(0, TimeSpan.Zero);
-        this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.Idle", "Idle"));
+        InitializeControls();
+        LoadSettings();
+        UpdateLimitEditors();
+        UpdateActionButtons();
+        UpdateStats(0, TimeSpan.Zero);
+        SetHeaderStatus(LocalizationService.GetString("Ui.Status.Idle", "Idle"));
 
-        this.PreviewKeyDown += this.MainWindow_PreviewKeyDown;
-        this.Closing += this.MainWindow_Closing;
-        this.Loaded += this.MainWindow_Loaded;
+        PreviewKeyDown += MainWindow_PreviewKeyDown;
+        Closing += MainWindow_Closing;
+        Loaded += MainWindow_Loaded;
     }
 
     protected override void OnSourceInitialized(EventArgs e) {
         base.OnSourceInitialized(e);
 
-        WindowInteropHelper helper = new WindowInteropHelper(this);
-        IntPtr handle = helper.Handle;
+        var helper = new WindowInteropHelper(this);
+        var handle = helper.Handle;
 
-        this.hotkeyService.AttachWindow(handle);
-        this.windowSource = HwndSource.FromHwnd(handle);
-        this.windowSource?.AddHook(this.WindowHook);
+        _hotkeyService.AttachWindow(handle);
+        _windowSource = HwndSource.FromHwnd(handle);
+        _windowSource?.AddHook(WindowHook);
 
-        this.isWindowReady = true;
-        this.RegisterHotkey();
+        _isWindowReady = true;
+        RegisterHotkey();
     }
 
     private void InitializeControls() {
-        this.ActionTypeComboBox.ItemsSource = this.actionModes;
-        this.ActionTypeComboBox.DisplayMemberPath = nameof(OptionItem<ActionType>.Label);
-        this.ActionTypeComboBox.SelectedIndex = 0;
+        ActionTypeComboBox.ItemsSource = _actionModes;
+        ActionTypeComboBox.DisplayMemberPath = nameof(OptionItem<ActionType>.Label);
+        ActionTypeComboBox.SelectedIndex = 0;
 
-        this.HotkeyModeComboBox.ItemsSource = this.hotkeyModes;
-        this.HotkeyModeComboBox.DisplayMemberPath = nameof(OptionItem<HotkeyMode>.Label);
-        this.HotkeyModeComboBox.SelectedIndex = 0;
+        HotkeyModeComboBox.ItemsSource = _hotkeyModes;
+        HotkeyModeComboBox.DisplayMemberPath = nameof(OptionItem<HotkeyMode>.Label);
+        HotkeyModeComboBox.SelectedIndex = 0;
 
-        this.KeyboardKeyComboBox.ItemsSource = this.keyboardKeys;
-        this.KeyboardKeyComboBox.DisplayMemberPath = nameof(KeyOption.Label);
-        KeyOption? defaultKey = this.keyboardKeys.FirstOrDefault(static item => item.VirtualKeyCode == 0x41 && !item.IsGroupHeader);
-        this.KeyboardKeyComboBox.SelectedItem = defaultKey ?? this.keyboardKeys.First(static item => !item.IsGroupHeader);
+        KeyboardKeyComboBox.ItemsSource = _keyboardKeys;
+        KeyboardKeyComboBox.DisplayMemberPath = nameof(KeyOption.Label);
+        var defaultKey =
+            _keyboardKeys.FirstOrDefault(static item => item.VirtualKeyCode == 0x41 && !item.IsGroupHeader);
+        KeyboardKeyComboBox.SelectedItem = defaultKey ?? _keyboardKeys.First(static item => !item.IsGroupHeader);
 
-        this.ClicksPerSecondTextBox.Text = FormatDouble(10.0);
-        this.IntervalMsTextBox.Text = FormatDouble(100.0);
-        this.VariationTextBox.Text = FormatDouble(0.0);
-        this.DutyMinTextBox.Text = "35";
-        this.DutyMaxTextBox.Text = "65";
+        ClicksPerSecondTextBox.Text = FormatDouble(10.0);
+        IntervalMsTextBox.Text = FormatDouble(100.0);
+        VariationTextBox.Text = FormatDouble(0.0);
+        DutyMinTextBox.Text = "35";
+        DutyMaxTextBox.Text = "65";
 
-        this.EnableClickLimitCheckBox.IsChecked = false;
-        this.ClickLimitTextBox.Text = "100";
-        this.EnableTimeLimitCheckBox.IsChecked = false;
-        this.TimeLimitSecondsTextBox.Text = "30";
+        EnableClickLimitCheckBox.IsChecked = false;
+        ClickLimitTextBox.Text = "100";
+        EnableTimeLimitCheckBox.IsChecked = false;
+        TimeLimitSecondsTextBox.Text = "30";
 
-        this.HotkeyDisplayBadge.Value = FormatHotkey(this.hotkeyConfig);
+        HotkeyDisplayBadge.Value = FormatHotkey(_hotkeyConfig);
 
-        this.ActionTypeComboBox.SelectionChanged += this.ActionTypeComboBox_SelectionChanged;
-        this.HotkeyModeComboBox.SelectionChanged += this.HotkeyModeComboBox_SelectionChanged;
-        this.EnableClickLimitCheckBox.Checked += this.LimitCheckBox_Changed;
-        this.EnableClickLimitCheckBox.Unchecked += this.LimitCheckBox_Changed;
-        this.EnableTimeLimitCheckBox.Checked += this.LimitCheckBox_Changed;
-        this.EnableTimeLimitCheckBox.Unchecked += this.LimitCheckBox_Changed;
+        ActionTypeComboBox.SelectionChanged += ActionTypeComboBox_SelectionChanged;
+        HotkeyModeComboBox.SelectionChanged += HotkeyModeComboBox_SelectionChanged;
+        EnableClickLimitCheckBox.Checked += LimitCheckBox_Changed;
+        EnableClickLimitCheckBox.Unchecked += LimitCheckBox_Changed;
+        EnableTimeLimitCheckBox.Checked += LimitCheckBox_Changed;
+        EnableTimeLimitCheckBox.Unchecked += LimitCheckBox_Changed;
 
-        this.ClicksPerSecondTextBox.TextChanged += this.ClicksPerSecondTextBox_TextChanged;
-        this.IntervalMsTextBox.TextChanged += this.IntervalMsTextBox_TextChanged;
+        ClicksPerSecondTextBox.TextChanged += ClicksPerSecondTextBox_TextChanged;
+        IntervalMsTextBox.TextChanged += IntervalMsTextBox_TextChanged;
 
-        this.ClicksPerSecondTextBox.LostFocus += this.NumericTextBox_LostFocus;
-        this.IntervalMsTextBox.LostFocus += this.NumericTextBox_LostFocus;
-        this.VariationTextBox.LostFocus += this.NumericTextBox_LostFocus;
-        this.DutyMinTextBox.LostFocus += this.NumericTextBox_LostFocus;
-        this.DutyMaxTextBox.LostFocus += this.NumericTextBox_LostFocus;
-        this.ClickLimitTextBox.LostFocus += this.NumericTextBox_LostFocus;
-        this.TimeLimitSecondsTextBox.LostFocus += this.NumericTextBox_LostFocus;
+        ClicksPerSecondTextBox.LostFocus += NumericTextBox_LostFocus;
+        IntervalMsTextBox.LostFocus += NumericTextBox_LostFocus;
+        VariationTextBox.LostFocus += NumericTextBox_LostFocus;
+        DutyMinTextBox.LostFocus += NumericTextBox_LostFocus;
+        DutyMaxTextBox.LostFocus += NumericTextBox_LostFocus;
+        ClickLimitTextBox.LostFocus += NumericTextBox_LostFocus;
+        TimeLimitSecondsTextBox.LostFocus += NumericTextBox_LostFocus;
 
-        this.RecordHotkeyButton.Click += this.RecordHotkeyButton_Click;
-        this.StartButton.Click += this.StartButton_Click;
-        this.StopButton.Click += this.StopButton_Click;
+        RecordHotkeyButton.Click += RecordHotkeyButton_Click;
+        StartButton.Click += StartButton_Click;
+        StopButton.Click += StopButton_Click;
 
-        this.UpdateActionTypeEditorVisibility();
+        UpdateActionTypeEditorVisibility();
     }
 
     private async void StartButton_Click(object sender, RoutedEventArgs e) {
         _ = sender;
         _ = e;
-        await this.StartRunAsync().ConfigureAwait(false);
+        await StartRunAsync().ConfigureAwait(false);
     }
 
     private void StopButton_Click(object sender, RoutedEventArgs e) {
         _ = sender;
         _ = e;
-        this.StopRun();
+        StopRun();
     }
 
     private void RecordHotkeyButton_Click(object sender, RoutedEventArgs e) {
         _ = sender;
         _ = e;
 
-        this.isCapturingHotkey = true;
-        this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyCapturePrompt", "Recording hotkey: press combination now (ESC to cancel)."));
-        _ = this.Focus();
+        _isCapturingHotkey = true;
+        SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyCapturePrompt",
+            "Recording hotkey: press combination now (ESC to cancel)."));
+        _ = Focus();
     }
 
     private void
-        ActionTypeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) {
+        ActionTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
         _ = sender;
         _ = e;
-        this.UpdateActionTypeEditorVisibility();
+        UpdateActionTypeEditorVisibility();
     }
 
     private void
-        HotkeyModeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) {
+        HotkeyModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
         _ = sender;
         _ = e;
-        if (this.HotkeyModeComboBox.SelectedItem is OptionItem<HotkeyMode> selected) {
-            this.hotkeyConfig.Mode = selected.Value;
-            this.HotkeyDisplayBadge.Value = FormatHotkey(this.hotkeyConfig);
-            this.RegisterHotkey();
+        if (HotkeyModeComboBox.SelectedItem is OptionItem<HotkeyMode> selected) {
+            _hotkeyConfig.Mode = selected.Value;
+            HotkeyDisplayBadge.Value = FormatHotkey(_hotkeyConfig);
+            RegisterHotkey();
         }
     }
 
     private void LimitCheckBox_Changed(object sender, RoutedEventArgs e) {
         _ = sender;
         _ = e;
-        this.UpdateLimitEditors();
+        UpdateLimitEditors();
     }
 
-    private void ClicksPerSecondTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e) {
+    private void ClicksPerSecondTextBox_TextChanged(object sender, TextChangedEventArgs e) {
         _ = sender;
         _ = e;
-        if (this.isSynchronizingRateFields) {
-            return;
-        }
+        if (_isSynchronizingRateFields) return;
 
-        if (!TryParseDouble(this.ClicksPerSecondTextBox.Text, out double cps) || cps <= 0.0) {
-            return;
-        }
+        if (!TryParseDouble(ClicksPerSecondTextBox.Text, out var cps) || cps <= 0.0) return;
 
         cps = Clamp(cps, MinimumClicksPerSecond, MaximumClicksPerSecond);
-        double interval = Clamp(1000.0 / cps, MinimumIntervalMilliseconds, MaximumIntervalMilliseconds);
+        var interval = Clamp(1000.0 / cps, MinimumIntervalMilliseconds, MaximumIntervalMilliseconds);
 
-        this.isSynchronizingRateFields = true;
-        this.IntervalMsTextBox.Text = FormatDouble(interval);
-        this.isSynchronizingRateFields = false;
+        _isSynchronizingRateFields = true;
+        IntervalMsTextBox.Text = FormatDouble(interval);
+        _isSynchronizingRateFields = false;
     }
 
-    private void IntervalMsTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e) {
+    private void IntervalMsTextBox_TextChanged(object sender, TextChangedEventArgs e) {
         _ = sender;
         _ = e;
-        if (this.isSynchronizingRateFields) {
-            return;
-        }
+        if (_isSynchronizingRateFields) return;
 
-        if (!TryParseDouble(this.IntervalMsTextBox.Text, out double intervalMs) || intervalMs <= 0.0) {
-            return;
-        }
+        if (!TryParseDouble(IntervalMsTextBox.Text, out var intervalMs) || intervalMs <= 0.0) return;
 
         intervalMs = Clamp(intervalMs, MinimumIntervalMilliseconds, MaximumIntervalMilliseconds);
-        double cps = Clamp(1000.0 / intervalMs, MinimumClicksPerSecond, MaximumClicksPerSecond);
+        var cps = Clamp(1000.0 / intervalMs, MinimumClicksPerSecond, MaximumClicksPerSecond);
 
-        this.isSynchronizingRateFields = true;
-        this.ClicksPerSecondTextBox.Text = FormatDouble(cps);
-        this.isSynchronizingRateFields = false;
+        _isSynchronizingRateFields = true;
+        ClicksPerSecondTextBox.Text = FormatDouble(cps);
+        _isSynchronizingRateFields = false;
     }
 
     private void NumericTextBox_LostFocus(object sender, RoutedEventArgs e) {
         _ = sender;
         _ = e;
-        this.NormalizeNumericFields();
+        NormalizeNumericFields();
     }
 
     private async Task StartRunAsync() {
-        if (this.isRunning) {
-            return;
-        }
+        if (_isRunning) return;
 
-        ClickProfile profile = this.BuildProfile();
-        IReadOnlyList<string> errors = Validation.Validate(profile);
+        var profile = BuildProfile();
+        var errors = Validation.Validate(profile);
         if (errors.Count > 0) {
-            this.SetHeaderStatus(errors[0]);
+            SetHeaderStatus(errors[0]);
             return;
         }
 
-        this.isRunning = true;
-        this.UpdateActionButtons();
-        this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.Running", "Running"));
-        this.UpdateStats(0, TimeSpan.Zero);
+        _isRunning = true;
+        UpdateActionButtons();
+        SetHeaderStatus(LocalizationService.GetString("Ui.Status.Running", "Running"));
+        UpdateStats(0, TimeSpan.Zero);
 
-        this.runCancellation = new CancellationTokenSource();
+        _runCancellation = new CancellationTokenSource();
 
         RunSummary summary;
         try {
-            summary = await this.engine.RunAsync(
+            summary = await _engine.RunAsync(
                 profile,
-                this.runCancellation.Token,
+                _runCancellation.Token,
                 progress => {
-                    _ = this.Dispatcher.BeginInvoke(() => { this.UpdateStats(progress.ClickCount, progress.Elapsed); });
+                    _ = Dispatcher.BeginInvoke(() => { UpdateStats(progress.ClickCount, progress.Elapsed); });
                 }).ConfigureAwait(false);
-        }
-        catch (ArgumentException ex) {
-            _ = this.Dispatcher.BeginInvoke(() => {
-                this.isRunning = false;
-                this.UpdateActionButtons();
-                this.SetHeaderStatus(ex.Message);
+        } catch (ArgumentException ex) {
+            _ = Dispatcher.BeginInvoke(() => {
+                _isRunning = false;
+                UpdateActionButtons();
+                SetHeaderStatus(ex.Message);
             });
             return;
-        }
-        catch (Exception ex) {
-            _ = this.Dispatcher.BeginInvoke(() => {
-                this.isRunning = false;
-                this.UpdateActionButtons();
-                this.SetHeaderStatus(LocalizationService.Format("Ui.Status.ErrorPrefix", ex.Message));
+        } catch (Exception ex) {
+            _ = Dispatcher.BeginInvoke(() => {
+                _isRunning = false;
+                UpdateActionButtons();
+                SetHeaderStatus(LocalizationService.Format("Ui.Status.ErrorPrefix", ex.Message));
             });
             return;
         }
 
-        _ = this.Dispatcher.BeginInvoke(() => {
-            this.isRunning = false;
-            this.UpdateActionButtons();
-            this.SetHeaderStatus(summary.Reason switch {
-                StopReason.ClickLimitReached => LocalizationService.GetString("Ui.Status.StoppedClickLimit", "Stopped (click limit reached)"),
-                StopReason.TimeLimitReached => LocalizationService.GetString("Ui.Status.StoppedTimeLimit", "Stopped (time limit reached)"),
+        _ = Dispatcher.BeginInvoke(() => {
+            _isRunning = false;
+            UpdateActionButtons();
+            SetHeaderStatus(summary.Reason switch {
+                StopReason.ClickLimitReached => LocalizationService.GetString("Ui.Status.StoppedClickLimit",
+                    "Stopped (click limit reached)"),
+                StopReason.TimeLimitReached => LocalizationService.GetString("Ui.Status.StoppedTimeLimit",
+                    "Stopped (time limit reached)"),
                 _ => LocalizationService.GetString("Ui.Status.Stopped", "Stopped")
             });
-            this.UpdateStats(summary.ClickCount, summary.Elapsed);
+            UpdateStats(summary.ClickCount, summary.Elapsed);
         });
     }
 
     private void StopRun() {
-        this.runCancellation?.Cancel();
+        _runCancellation?.Cancel();
     }
 
     private ClickProfile BuildProfile() {
-        double cps = ParseDoubleOrDefault(this.ClicksPerSecondTextBox.Text, 10.0);
+        var cps = ParseDoubleOrDefault(ClicksPerSecondTextBox.Text, 10.0);
         cps = Clamp(cps, MinimumClicksPerSecond, MaximumClicksPerSecond);
 
-        double variation = ParseDoubleOrDefault(this.VariationTextBox.Text, 0.0);
+        var variation = ParseDoubleOrDefault(VariationTextBox.Text, 0.0);
         variation = Clamp(variation, 0.0, 95.0);
 
-        int dutyMin = ParseIntOrDefault(this.DutyMinTextBox.Text, 35);
-        int dutyMax = ParseIntOrDefault(this.DutyMaxTextBox.Text, 65);
+        var dutyMin = ParseIntOrDefault(DutyMinTextBox.Text, 35);
+        var dutyMax = ParseIntOrDefault(DutyMaxTextBox.Text, 65);
 
         int? clickLimit = null;
-        if (this.EnableClickLimitCheckBox.IsChecked == true) {
-            int limit = ParseIntOrDefault(this.ClickLimitTextBox.Text, 100);
+        if (EnableClickLimitCheckBox.IsChecked == true) {
+            var limit = ParseIntOrDefault(ClickLimitTextBox.Text, 100);
             clickLimit = Math.Max(1, limit);
         }
 
         TimeSpan? timeLimit = null;
-        if (this.EnableTimeLimitCheckBox.IsChecked == true) {
-            int seconds = ParseIntOrDefault(this.TimeLimitSecondsTextBox.Text, 30);
+        if (EnableTimeLimitCheckBox.IsChecked == true) {
+            var seconds = ParseIntOrDefault(TimeLimitSecondsTextBox.Text, 30);
             timeLimit = TimeSpan.FromSeconds(Math.Max(1, seconds));
         }
 
-        ActionType actionType = ActionType.MouseLeft;
-        if (this.ActionTypeComboBox.SelectedItem is OptionItem<ActionType> actionItem) {
-            actionType = actionItem.Value;
-        }
+        var actionType = ActionType.MouseLeft;
+        if (ActionTypeComboBox.SelectedItem is OptionItem<ActionType> actionItem) actionType = actionItem.Value;
 
-        int virtualKeyCode = 0;
-        if (actionType == ActionType.KeyboardKey && this.KeyboardKeyComboBox.SelectedItem is KeyOption keyOption && !keyOption.IsGroupHeader) {
-            virtualKeyCode = keyOption.VirtualKeyCode;
-        }
+        var virtualKeyCode = 0;
+        if (actionType == ActionType.KeyboardKey && KeyboardKeyComboBox.SelectedItem is KeyOption keyOption &&
+            !keyOption.IsGroupHeader) virtualKeyCode = keyOption.VirtualKeyCode;
 
         return new ClickProfile {
             ClicksPerSecond = cps,
@@ -341,71 +332,63 @@ public partial class MainWindow : Window {
         _ = sender;
         _ = e;
 
-        DateTime now = DateTime.UtcNow;
-        if ((now - this.lastHotkeyPressUtc).TotalMilliseconds < 220) {
-            return;
-        }
+        var now = DateTime.UtcNow;
+        if ((now - _lastHotkeyPressUtc).TotalMilliseconds < 220) return;
 
-        this.lastHotkeyPressUtc = now;
+        _lastHotkeyPressUtc = now;
 
-        if (this.hotkeyConfig.Mode == HotkeyMode.Toggle) {
-            if (this.isRunning) {
-                this.StopRun();
+        if (_hotkeyConfig.Mode == HotkeyMode.Toggle) {
+            if (_isRunning) {
+                StopRun();
                 return;
             }
 
-            _ = this.StartRunAsync();
+            _ = StartRunAsync();
             return;
         }
 
-        if (!this.isRunning) {
-            _ = this.StartRunAsync();
-        }
+        if (!_isRunning) _ = StartRunAsync();
 
-        this.holdModeTimer.Start();
+        _holdModeTimer.Start();
     }
 
     private void HoldModeTimer_Tick(object? sender, EventArgs e) {
         _ = sender;
         _ = e;
 
-        if (this.hotkeyConfig.Mode != HotkeyMode.Hold) {
-            this.holdModeTimer.Stop();
+        if (_hotkeyConfig.Mode != HotkeyMode.Hold) {
+            _holdModeTimer.Stop();
             return;
         }
 
-        if (!this.isRunning) {
-            this.holdModeTimer.Stop();
+        if (!_isRunning) {
+            _holdModeTimer.Stop();
             return;
         }
 
-        if (!this.hotkeyService.IsCurrentHotkeyPressed()) {
-            this.StopRun();
-            this.holdModeTimer.Stop();
+        if (!_hotkeyService.IsCurrentHotkeyPressed()) {
+            StopRun();
+            _holdModeTimer.Stop();
         }
     }
 
     private void RegisterHotkey() {
-        this.HotkeyDisplayBadge.Value = FormatHotkey(this.hotkeyConfig);
+        HotkeyDisplayBadge.Value = FormatHotkey(_hotkeyConfig);
 
-        if (!this.isWindowReady) {
-            return;
-        }
+        if (!_isWindowReady) return;
 
-        bool registered = this.hotkeyService.Register(this.hotkeyConfig);
-        if (!registered) {
-            this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyRegisterFailed", "Hotkey registration failed. Choose another combination."));
-        }
+        var registered = _hotkeyService.Register(_hotkeyConfig);
+        if (!registered)
+            SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyRegisterFailed",
+                "Hotkey registration failed. Choose another combination."));
     }
 
     private IntPtr WindowHook(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled) {
         _ = hwnd;
         _ = lParam;
 
-        this.hotkeyService.ProcessWindowMessage(message, wParam);
-        if (message == GlobalHotkeyService.WmHotkey) {
-            handled = true;
-        }
+        _hotkeyService.ProcessWindowMessage(message, wParam);
+        if (message == GlobalHotkeyService.WmHotkey) handled = true;
 
         return IntPtr.Zero;
     }
@@ -413,170 +396,166 @@ public partial class MainWindow : Window {
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e) {
         _ = sender;
 
-        if (!this.isCapturingHotkey) {
-            return;
-        }
+        if (!_isCapturingHotkey) return;
 
         e.Handled = true;
 
-        Key key = e.Key == Key.System ? e.SystemKey : e.Key;
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
         if (key == Key.Escape) {
-            this.isCapturingHotkey = false;
-            this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyCaptureCancelled", "Hotkey capture cancelled."));
+            _isCapturingHotkey = false;
+            SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyCaptureCancelled",
+                "Hotkey capture cancelled."));
             return;
         }
 
         if (IsModifierKey(key)) {
-            this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyNeedNonModifier", "Please press at least one non-modifier key."));
+            SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyNeedNonModifier",
+                "Please press at least one non-modifier key."));
             return;
         }
 
-        HotkeyModifiers modifiers = ReadModifiers();
+        var modifiers = ReadModifiers();
         if (modifiers == HotkeyModifiers.None) {
-            this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyNeedModifier", "Hotkey must include at least one modifier."));
+            SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyNeedModifier",
+                "Hotkey must include at least one modifier."));
             return;
         }
 
-        int vk = KeyInterop.VirtualKeyFromKey(key);
-        this.hotkeyConfig = new HotkeyConfig {
+        var vk = KeyInterop.VirtualKeyFromKey(key);
+        _hotkeyConfig = new HotkeyConfig {
             Modifiers = modifiers,
             VirtualKeyCode = vk,
-            Mode = this.hotkeyConfig.Mode
+            Mode = _hotkeyConfig.Mode
         };
 
-        this.isCapturingHotkey = false;
-        this.RegisterHotkey();
-        this.SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyUpdated", "Hotkey updated."));
+        _isCapturingHotkey = false;
+        RegisterHotkey();
+        SetHeaderStatus(LocalizationService.GetString("Ui.Status.HotkeyUpdated", "Hotkey updated."));
     }
 
-    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
+    private void MainWindow_Closing(object? sender, CancelEventArgs e) {
         _ = sender;
         _ = e;
 
-        this.StopRun();
-        this.holdModeTimer.Stop();
-        this.hotkeyService.Unregister();
-        this.windowSource?.RemoveHook(this.WindowHook);
-        this.SaveSettings();
+        StopRun();
+        _holdModeTimer.Stop();
+        _hotkeyService.Unregister();
+        _windowSource?.RemoveHook(WindowHook);
+        SaveSettings();
     }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e) {
         _ = sender;
         _ = e;
-        this.ApplyAutoHeight();
+        ApplyAutoHeight();
     }
 
-    private void MainTabControl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) {
+    private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e) {
         _ = sender;
 
-        if (!ReferenceEquals(e.OriginalSource, this.MainTabControl)) {
-            return;
-        }
+        if (!ReferenceEquals(e.OriginalSource, MainTabControl)) return;
 
-        this.ApplyAutoHeight();
+        ApplyAutoHeight();
     }
 
     private void UpdateActionTypeEditorVisibility() {
-        bool isKeyboard = false;
-        if (this.ActionTypeComboBox.SelectedItem is OptionItem<ActionType> selected) {
+        var isKeyboard = false;
+        if (ActionTypeComboBox.SelectedItem is OptionItem<ActionType> selected)
             isKeyboard = selected.Value == ActionType.KeyboardKey;
-        }
 
-        this.KeyboardKeyRow.Visibility = isKeyboard ? Visibility.Visible : Visibility.Collapsed;
-        this.ApplyAutoHeight();
+        KeyboardKeyRow.Visibility = isKeyboard ? Visibility.Visible : Visibility.Collapsed;
+        ApplyAutoHeight();
     }
 
     private void UpdateLimitEditors() {
-        this.ClickLimitTextBox.IsEnabled = this.EnableClickLimitCheckBox.IsChecked == true;
-        this.TimeLimitSecondsTextBox.IsEnabled = this.EnableTimeLimitCheckBox.IsChecked == true;
+        ClickLimitTextBox.IsEnabled = EnableClickLimitCheckBox.IsChecked == true;
+        TimeLimitSecondsTextBox.IsEnabled = EnableTimeLimitCheckBox.IsChecked == true;
     }
 
     private void UpdateActionButtons() {
-        this.StartButton.IsEnabled = !this.isRunning;
-        this.StopButton.IsEnabled = this.isRunning;
+        StartButton.IsEnabled = !_isRunning;
+        StopButton.IsEnabled = _isRunning;
     }
 
     private void UpdateStats(int clickCount, TimeSpan elapsed) {
-        this.ClicksTextBlock.Text = LocalizationService.Format("Ui.Header.Clicks.Format", clickCount.ToString(CultureInfo.CurrentCulture));
-        this.ElapsedTextBlock.Text = LocalizationService.Format("Ui.Header.Elapsed.Format", elapsed.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture));
+        ClicksTextBlock.Text =
+            LocalizationService.Format("Ui.Header.Clicks.Format", clickCount.ToString(CultureInfo.CurrentCulture));
+        ElapsedTextBlock.Text = LocalizationService.Format("Ui.Header.Elapsed.Format",
+            elapsed.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture));
     }
 
     private void SetHeaderStatus(string text) {
-        string safeText = string.IsNullOrWhiteSpace(text)
+        var safeText = string.IsNullOrWhiteSpace(text)
             ? LocalizationService.GetString("Ui.Status.Idle", "Idle")
             : text;
-        this.StatusTextBlock.Text = LocalizationService.Format("Ui.Header.Status.Format", safeText);
+        StatusTextBlock.Text = LocalizationService.Format("Ui.Header.Status.Format", safeText);
     }
 
     private void ApplyAutoHeight() {
-        if (!this.IsLoaded || this.isApplyingAutoHeight) {
-            return;
-        }
+        if (!IsLoaded || _isApplyingAutoHeight) return;
 
-        _ = this.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() => {
-            if (this.isApplyingAutoHeight) {
-                return;
-            }
+        _ = Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() => {
+            if (_isApplyingAutoHeight) return;
 
-            this.isApplyingAutoHeight = true;
+            _isApplyingAutoHeight = true;
             try {
-                this.MaxHeight = SystemParameters.WorkArea.Height;
-                this.SizeToContent = SizeToContent.Manual;
-                this.UpdateLayout();
-                this.SizeToContent = SizeToContent.Height;
+                MaxHeight = SystemParameters.WorkArea.Height;
+                SizeToContent = SizeToContent.Manual;
+                UpdateLayout();
+                SizeToContent = SizeToContent.Height;
             } finally {
-                this.isApplyingAutoHeight = false;
+                _isApplyingAutoHeight = false;
             }
         }));
     }
 
     private void NormalizeNumericFields() {
-        double cps = ParseDoubleOrDefault(this.ClicksPerSecondTextBox.Text, 10.0);
+        var cps = ParseDoubleOrDefault(ClicksPerSecondTextBox.Text, 10.0);
         cps = Clamp(cps, MinimumClicksPerSecond, MaximumClicksPerSecond);
-        double interval = Clamp(1000.0 / cps, MinimumIntervalMilliseconds, MaximumIntervalMilliseconds);
+        var interval = Clamp(1000.0 / cps, MinimumIntervalMilliseconds, MaximumIntervalMilliseconds);
 
-        double variation = ParseDoubleOrDefault(this.VariationTextBox.Text, 0.0);
+        var variation = ParseDoubleOrDefault(VariationTextBox.Text, 0.0);
         variation = Clamp(variation, 0.0, 95.0);
 
-        int dutyMin = ParseIntOrDefault(this.DutyMinTextBox.Text, 35);
+        var dutyMin = ParseIntOrDefault(DutyMinTextBox.Text, 35);
         dutyMin = Math.Clamp(dutyMin, 1, 99);
 
-        int dutyMax = ParseIntOrDefault(this.DutyMaxTextBox.Text, 65);
+        var dutyMax = ParseIntOrDefault(DutyMaxTextBox.Text, 65);
         dutyMax = Math.Clamp(dutyMax, 1, 99);
 
-        int clickLimit = ParseIntOrDefault(this.ClickLimitTextBox.Text, 100);
+        var clickLimit = ParseIntOrDefault(ClickLimitTextBox.Text, 100);
         clickLimit = Math.Clamp(clickLimit, 1, 1_000_000);
 
-        int timeLimitSeconds = ParseIntOrDefault(this.TimeLimitSecondsTextBox.Text, 30);
+        var timeLimitSeconds = ParseIntOrDefault(TimeLimitSecondsTextBox.Text, 30);
         timeLimitSeconds = Math.Clamp(timeLimitSeconds, 1, 86_400);
 
-        this.isSynchronizingRateFields = true;
-        this.ClicksPerSecondTextBox.Text = FormatDouble(cps);
-        this.IntervalMsTextBox.Text = FormatDouble(interval);
-        this.VariationTextBox.Text = FormatDouble(variation);
-        this.DutyMinTextBox.Text = dutyMin.ToString(CultureInfo.CurrentCulture);
-        this.DutyMaxTextBox.Text = dutyMax.ToString(CultureInfo.CurrentCulture);
-        this.ClickLimitTextBox.Text = clickLimit.ToString(CultureInfo.CurrentCulture);
-        this.TimeLimitSecondsTextBox.Text = timeLimitSeconds.ToString(CultureInfo.CurrentCulture);
-        this.isSynchronizingRateFields = false;
+        _isSynchronizingRateFields = true;
+        ClicksPerSecondTextBox.Text = FormatDouble(cps);
+        IntervalMsTextBox.Text = FormatDouble(interval);
+        VariationTextBox.Text = FormatDouble(variation);
+        DutyMinTextBox.Text = dutyMin.ToString(CultureInfo.CurrentCulture);
+        DutyMaxTextBox.Text = dutyMax.ToString(CultureInfo.CurrentCulture);
+        ClickLimitTextBox.Text = clickLimit.ToString(CultureInfo.CurrentCulture);
+        TimeLimitSecondsTextBox.Text = timeLimitSeconds.ToString(CultureInfo.CurrentCulture);
+        _isSynchronizingRateFields = false;
     }
 
     private void SaveSettings() {
-        ClickProfile profile = this.BuildProfile();
+        var profile = BuildProfile();
 
-        int clickLimitValue = ParseIntOrDefault(this.ClickLimitTextBox.Text, 100);
-        int timeLimitSeconds = ParseIntOrDefault(this.TimeLimitSecondsTextBox.Text, 30);
+        var clickLimitValue = ParseIntOrDefault(ClickLimitTextBox.Text, 100);
+        var timeLimitSeconds = ParseIntOrDefault(TimeLimitSecondsTextBox.Text, 30);
 
-        AppSettings settings = new AppSettings {
+        var settings = new AppSettings {
             Profile = profile,
-            IsClickLimitEnabled = this.EnableClickLimitCheckBox.IsChecked == true,
+            IsClickLimitEnabled = EnableClickLimitCheckBox.IsChecked == true,
             ClickLimitValue = Math.Clamp(clickLimitValue, 1, 1_000_000),
-            IsTimeLimitEnabled = this.EnableTimeLimitCheckBox.IsChecked == true,
+            IsTimeLimitEnabled = EnableTimeLimitCheckBox.IsChecked == true,
             TimeLimitSeconds = Math.Clamp(timeLimitSeconds, 1, 86_400),
             Hotkey = new HotkeyConfig {
-                Mode = this.hotkeyConfig.Mode,
-                Modifiers = this.hotkeyConfig.Modifiers,
-                VirtualKeyCode = this.hotkeyConfig.VirtualKeyCode
+                Mode = _hotkeyConfig.Mode,
+                Modifiers = _hotkeyConfig.Modifiers,
+                VirtualKeyCode = _hotkeyConfig.VirtualKeyCode
             }
         };
 
@@ -584,65 +563,58 @@ public partial class MainWindow : Window {
     }
 
     private void LoadSettings() {
-        AppSettings settings = SettingsStore.Load();
-        ClickProfile profile = settings.Profile;
+        var settings = SettingsStore.Load();
+        var profile = settings.Profile;
 
-        this.ClicksPerSecondTextBox.Text =
+        ClicksPerSecondTextBox.Text =
             FormatDouble(Clamp(profile.ClicksPerSecond, MinimumClicksPerSecond, MaximumClicksPerSecond));
-        this.VariationTextBox.Text = FormatDouble(Clamp(profile.SpeedVariationPercent, 0.0, 95.0));
-        this.DutyMinTextBox.Text = Math.Clamp(profile.DutyCycleMinPercent, 1, 99).ToString(CultureInfo.CurrentCulture);
-        this.DutyMaxTextBox.Text = Math.Clamp(profile.DutyCycleMaxPercent, 1, 99).ToString(CultureInfo.CurrentCulture);
-        this.EnableClickLimitCheckBox.IsChecked = settings.IsClickLimitEnabled;
-        this.ClickLimitTextBox.Text =
+        VariationTextBox.Text = FormatDouble(Clamp(profile.SpeedVariationPercent, 0.0, 95.0));
+        DutyMinTextBox.Text = Math.Clamp(profile.DutyCycleMinPercent, 1, 99).ToString(CultureInfo.CurrentCulture);
+        DutyMaxTextBox.Text = Math.Clamp(profile.DutyCycleMaxPercent, 1, 99).ToString(CultureInfo.CurrentCulture);
+        EnableClickLimitCheckBox.IsChecked = settings.IsClickLimitEnabled;
+        ClickLimitTextBox.Text =
             Math.Clamp(settings.ClickLimitValue, 1, 1_000_000).ToString(CultureInfo.CurrentCulture);
-        this.EnableTimeLimitCheckBox.IsChecked = settings.IsTimeLimitEnabled;
-        this.TimeLimitSecondsTextBox.Text =
+        EnableTimeLimitCheckBox.IsChecked = settings.IsTimeLimitEnabled;
+        TimeLimitSecondsTextBox.Text =
             Math.Clamp(settings.TimeLimitSeconds, 1, 86_400).ToString(CultureInfo.CurrentCulture);
 
-        this.isSynchronizingRateFields = true;
-        if (TryParseDouble(this.ClicksPerSecondTextBox.Text, out double cps)) {
-            double interval = Clamp(1000.0 / cps, MinimumIntervalMilliseconds, MaximumIntervalMilliseconds);
-            this.IntervalMsTextBox.Text = FormatDouble(interval);
+        _isSynchronizingRateFields = true;
+        if (TryParseDouble(ClicksPerSecondTextBox.Text, out var cps)) {
+            var interval = Clamp(1000.0 / cps, MinimumIntervalMilliseconds, MaximumIntervalMilliseconds);
+            IntervalMsTextBox.Text = FormatDouble(interval);
         }
 
-        this.isSynchronizingRateFields = false;
+        _isSynchronizingRateFields = false;
 
-        this.SelectActionMode(profile.ActionType);
-        this.SelectKeyboardKey(profile.VirtualKeyCode <= 0 ? 0x41 : profile.VirtualKeyCode);
+        SelectActionMode(profile.ActionType);
+        SelectKeyboardKey(profile.VirtualKeyCode <= 0 ? 0x41 : profile.VirtualKeyCode);
 
-        this.hotkeyConfig = settings.Hotkey ?? new HotkeyConfig();
-        this.SelectHotkeyMode(this.hotkeyConfig.Mode);
-        this.HotkeyDisplayBadge.Value = FormatHotkey(this.hotkeyConfig);
+        _hotkeyConfig = settings.Hotkey ?? new HotkeyConfig();
+        SelectHotkeyMode(_hotkeyConfig.Mode);
+        HotkeyDisplayBadge.Value = FormatHotkey(_hotkeyConfig);
     }
 
     private void SelectActionMode(ActionType actionType) {
-        OptionItem<ActionType>? item = this.actionModes.FirstOrDefault(x => x.Value == actionType);
-        if (item is not null) {
-            this.ActionTypeComboBox.SelectedItem = item;
-        }
+        var item = _actionModes.FirstOrDefault(x => x.Value == actionType);
+        if (item is not null) ActionTypeComboBox.SelectedItem = item;
     }
 
     private void SelectHotkeyMode(HotkeyMode mode) {
-        OptionItem<HotkeyMode>? item = this.hotkeyModes.FirstOrDefault(x => x.Value == mode);
-        if (item is not null) {
-            this.HotkeyModeComboBox.SelectedItem = item;
-        }
+        var item = _hotkeyModes.FirstOrDefault(x => x.Value == mode);
+        if (item is not null) HotkeyModeComboBox.SelectedItem = item;
     }
 
     private void SelectKeyboardKey(int virtualKeyCode) {
-        KeyOption? option = this.keyboardKeys.FirstOrDefault(x => x.VirtualKeyCode == virtualKeyCode && !x.IsGroupHeader);
-        if (option is null) {
-            option = this.keyboardKeys.FirstOrDefault(static x => x.VirtualKeyCode == 0x41 && !x.IsGroupHeader);
-        }
+        var option = _keyboardKeys.FirstOrDefault(x => x.VirtualKeyCode == virtualKeyCode && !x.IsGroupHeader);
+        if (option is null)
+            option = _keyboardKeys.FirstOrDefault(static x => x.VirtualKeyCode == 0x41 && !x.IsGroupHeader);
 
-        if (option is not null) {
-            this.KeyboardKeyComboBox.SelectedItem = option;
-        }
+        if (option is not null) KeyboardKeyComboBox.SelectedItem = option;
     }
 
     private static List<KeyOption> BuildKeyboardKeys() {
-        List<KeyOption> options = new List<KeyOption>(220);
-        HashSet<int> usedVirtualKeys = new HashSet<int>();
+        var options = new List<KeyOption>(220);
+        var usedVirtualKeys = new HashSet<int>();
 
         AddGroup(
             options,
@@ -672,37 +644,33 @@ public partial class MainWindow : Window {
             },
             usedVirtualKeys);
 
-        List<KeyOption> otherKeys = new List<KeyOption>(120);
-        foreach (Key key in Enum.GetValues<Key>()) {
-            if (!TryCreateKeyOption(key, usedVirtualKeys, out KeyOption option)) {
-                continue;
-            }
+        var otherKeys = new List<KeyOption>(120);
+        foreach (var key in Enum.GetValues<Key>()) {
+            if (!TryCreateKeyOption(key, usedVirtualKeys, out var option)) continue;
 
             otherKeys.Add(option);
         }
 
         otherKeys.Sort(static (left, right) => StringComparer.OrdinalIgnoreCase.Compare(left.Label, right.Label));
         if (otherKeys.Count > 0) {
-            options.Add(KeyOption.CreateGroupHeader(LocalizationService.GetString("Ui.Keyboard.Group.Other", "Other Keys")));
+            options.Add(
+                KeyOption.CreateGroupHeader(LocalizationService.GetString("Ui.Keyboard.Group.Other", "Other Keys")));
             options.AddRange(otherKeys);
         }
 
         return options;
     }
 
-    private static void AddGroup(List<KeyOption> target, string headerLabel, IEnumerable<Key> keys, HashSet<int> usedVirtualKeys) {
-        List<KeyOption> groupItems = new List<KeyOption>();
-        foreach (Key key in keys) {
-            if (!TryCreateKeyOption(key, usedVirtualKeys, out KeyOption option)) {
-                continue;
-            }
+    private static void AddGroup(List<KeyOption> target, string headerLabel, IEnumerable<Key> keys,
+        HashSet<int> usedVirtualKeys) {
+        var groupItems = new List<KeyOption>();
+        foreach (var key in keys) {
+            if (!TryCreateKeyOption(key, usedVirtualKeys, out var option)) continue;
 
             groupItems.Add(option);
         }
 
-        if (groupItems.Count == 0) {
-            return;
-        }
+        if (groupItems.Count == 0) return;
 
         target.Add(KeyOption.CreateGroupHeader(headerLabel));
         target.AddRange(groupItems);
@@ -711,27 +679,20 @@ public partial class MainWindow : Window {
     private static bool TryCreateKeyOption(Key key, HashSet<int> usedVirtualKeys, out KeyOption option) {
         option = null!;
 
-        if (key == Key.None || IsModifierKey(key)) {
-            return false;
-        }
+        if (key == Key.None || IsModifierKey(key)) return false;
 
         int virtualKeyCode;
         try {
             virtualKeyCode = KeyInterop.VirtualKeyFromKey(key);
-        }
-        catch {
+        } catch {
             return false;
         }
 
-        if (virtualKeyCode <= 0 || virtualKeyCode > 255) {
-            return false;
-        }
+        if (virtualKeyCode <= 0 || virtualKeyCode > 255) return false;
 
-        if (!usedVirtualKeys.Add(virtualKeyCode)) {
-            return false;
-        }
+        if (!usedVirtualKeys.Add(virtualKeyCode)) return false;
 
-        string keyDisplayName = key switch {
+        var keyDisplayName = key switch {
             >= Key.A and <= Key.Z => key.ToString(),
             >= Key.D0 and <= Key.D9 => ((char)('0' + ((int)key - (int)Key.D0))).ToString(CultureInfo.InvariantCulture),
             >= Key.NumPad0 and <= Key.NumPad9 => $"Num {(int)key - (int)Key.NumPad0}",
@@ -743,56 +704,38 @@ public partial class MainWindow : Window {
     }
 
     private static string FormatHotkey(HotkeyConfig config) {
-        StringBuilder builder = new StringBuilder(32);
+        var builder = new StringBuilder(32);
 
-        if (config.Modifiers.HasFlag(HotkeyModifiers.Control)) {
-            builder.Append("Ctrl + ");
-        }
+        if (config.Modifiers.HasFlag(HotkeyModifiers.Control)) builder.Append("Ctrl + ");
 
-        if (config.Modifiers.HasFlag(HotkeyModifiers.Shift)) {
-            builder.Append("Shift + ");
-        }
+        if (config.Modifiers.HasFlag(HotkeyModifiers.Shift)) builder.Append("Shift + ");
 
-        if (config.Modifiers.HasFlag(HotkeyModifiers.Alt)) {
-            builder.Append("Alt + ");
-        }
+        if (config.Modifiers.HasFlag(HotkeyModifiers.Alt)) builder.Append("Alt + ");
 
-        if (config.Modifiers.HasFlag(HotkeyModifiers.Win)) {
-            builder.Append("Win + ");
-        }
+        if (config.Modifiers.HasFlag(HotkeyModifiers.Win)) builder.Append("Win + ");
 
         builder.Append(GetKeyDisplayName(config.VirtualKeyCode));
         return builder.ToString();
     }
 
     private static string GetKeyDisplayName(int virtualKeyCode) {
-        Key key = KeyInterop.KeyFromVirtualKey(virtualKeyCode);
-        if (key == Key.None) {
-            return $"VK 0x{virtualKeyCode:X2}";
-        }
+        var key = KeyInterop.KeyFromVirtualKey(virtualKeyCode);
+        if (key == Key.None) return $"VK 0x{virtualKeyCode:X2}";
 
         return key.ToString();
     }
 
     private static HotkeyModifiers ReadModifiers() {
-        HotkeyModifiers modifiers = HotkeyModifiers.None;
+        var modifiers = HotkeyModifiers.None;
 
-        ModifierKeys keyboardModifiers = Keyboard.Modifiers;
-        if (keyboardModifiers.HasFlag(ModifierKeys.Control)) {
-            modifiers |= HotkeyModifiers.Control;
-        }
+        var keyboardModifiers = Keyboard.Modifiers;
+        if (keyboardModifiers.HasFlag(ModifierKeys.Control)) modifiers |= HotkeyModifiers.Control;
 
-        if (keyboardModifiers.HasFlag(ModifierKeys.Shift)) {
-            modifiers |= HotkeyModifiers.Shift;
-        }
+        if (keyboardModifiers.HasFlag(ModifierKeys.Shift)) modifiers |= HotkeyModifiers.Shift;
 
-        if (keyboardModifiers.HasFlag(ModifierKeys.Alt)) {
-            modifiers |= HotkeyModifiers.Alt;
-        }
+        if (keyboardModifiers.HasFlag(ModifierKeys.Alt)) modifiers |= HotkeyModifiers.Alt;
 
-        if (IsWinDown()) {
-            modifiers |= HotkeyModifiers.Win;
-        }
+        if (IsWinDown()) modifiers |= HotkeyModifiers.Win;
 
         return modifiers;
     }
@@ -814,29 +757,23 @@ public partial class MainWindow : Window {
     }
 
     private static bool TryParseDouble(string? input, out double value) {
-        string text = (input ?? string.Empty).Trim();
+        var text = (input ?? string.Empty).Trim();
 
-        bool parsed = double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
-        if (parsed) {
-            return true;
-        }
+        var parsed = double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+        if (parsed) return true;
 
         return double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
     }
 
     private static double ParseDoubleOrDefault(string? input, double fallback) {
-        return TryParseDouble(input, out double value) ? value : fallback;
+        return TryParseDouble(input, out var value) ? value : fallback;
     }
 
     private static int ParseIntOrDefault(string? input, int fallback) {
-        string text = (input ?? string.Empty).Trim();
-        if (int.TryParse(text, NumberStyles.Integer, CultureInfo.CurrentCulture, out int value)) {
-            return value;
-        }
+        var text = (input ?? string.Empty).Trim();
+        if (int.TryParse(text, NumberStyles.Integer, CultureInfo.CurrentCulture, out var value)) return value;
 
-        if (int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out value)) {
-            return value;
-        }
+        if (int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out value)) return value;
 
         return fallback;
     }
