@@ -64,6 +64,7 @@ public sealed class AppSettings {
     public bool IsTimeLimitEnabled { get; set; }
     public int TimeLimitSeconds { get; set; } = 30;
     public HotkeyConfig Hotkey { get; set; } = new();
+    public string LanguageCode { get; set; } = "en";
 }
 
 public sealed class ClickProgress {
@@ -93,6 +94,17 @@ public sealed class KeyOption {
     public static KeyOption CreateGroupHeader(string label) {
         return new KeyOption(-1, label, true);
     }
+}
+
+public sealed class LanguageOption {
+    public LanguageOption(string code, string label) {
+        Code = code ?? throw new ArgumentNullException(nameof(code));
+        Label = label ?? throw new ArgumentNullException(nameof(label));
+    }
+
+    public string Code { get; }
+
+    public string Label { get; }
 }
 
 public static class Ensure {

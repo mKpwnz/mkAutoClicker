@@ -21,6 +21,7 @@ public partial class MainWindow : Window {
     private readonly AutoClickerEngine _engine;
     private readonly DispatcherTimer _holdModeTimer;
     private readonly List<OptionItem<HotkeyMode>> _hotkeyModes;
+    private readonly List<LanguageOption> _languageOptions;
     private readonly GlobalHotkeyService _hotkeyService;
     private readonly List<KeyOption> _keyboardKeys;
 
@@ -30,8 +31,11 @@ public partial class MainWindow : Window {
 
     private bool _isRunning;
     private bool _isSynchronizingRateFields;
+    private bool _isUpdatingLanguageSelection;
     private bool _isWindowReady;
     private DateTime _lastHotkeyPressUtc = DateTime.MinValue;
+    private int _lastClickCount;
+    private TimeSpan _lastElapsed = TimeSpan.Zero;
     private CancellationTokenSource? _runCancellation;
 
     private HwndSource? _windowSource;
@@ -49,17 +53,10 @@ public partial class MainWindow : Window {
         };
         _holdModeTimer.Tick += HoldModeTimer_Tick;
 
-        _actionModes = new List<OptionItem<ActionType>> {
-            new(LocalizationService.GetString("Ui.ActionType.MouseLeft", "Mouse Left"), ActionType.MouseLeft),
-            new(LocalizationService.GetString("Ui.ActionType.MouseMiddle", "Mouse Middle"), ActionType.MouseMiddle),
-            new(LocalizationService.GetString("Ui.ActionType.MouseRight", "Mouse Right"), ActionType.MouseRight),
-            new(LocalizationService.GetString("Ui.ActionType.KeyboardKey", "Keyboard Key"), ActionType.KeyboardKey)
-        };
-        _hotkeyModes = new List<OptionItem<HotkeyMode>> {
-            new(LocalizationService.GetString("Ui.HotkeyMode.Toggle", "Toggle"), HotkeyMode.Toggle),
-            new(LocalizationService.GetString("Ui.HotkeyMode.Hold", "Hold"), HotkeyMode.Hold)
-        };
-        _keyboardKeys = BuildKeyboardKeys();
+        _actionModes = new List<OptionItem<ActionType>>(4);
+        _hotkeyModes = new List<OptionItem<HotkeyMode>>(2);
+        _languageOptions = new List<LanguageOption>(4);
+        _keyboardKeys = new List<KeyOption>(220);
 
         _hotkeyConfig = new HotkeyConfig {
             Mode = HotkeyMode.Toggle,
@@ -94,19 +91,13 @@ public partial class MainWindow : Window {
     }
 
     private void InitializeControls() {
-        ActionTypeComboBox.ItemsSource = _actionModes;
         ActionTypeComboBox.DisplayMemberPath = nameof(OptionItem<ActionType>.Label);
-        ActionTypeComboBox.SelectedIndex = 0;
-
-        HotkeyModeComboBox.ItemsSource = _hotkeyModes;
         HotkeyModeComboBox.DisplayMemberPath = nameof(OptionItem<HotkeyMode>.Label);
-        HotkeyModeComboBox.SelectedIndex = 0;
-
-        KeyboardKeyComboBox.ItemsSource = _keyboardKeys;
         KeyboardKeyComboBox.DisplayMemberPath = nameof(KeyOption.Label);
-        var defaultKey =
-            _keyboardKeys.FirstOrDefault(static item => item.VirtualKeyCode == 0x41 && !item.IsGroupHeader);
-        KeyboardKeyComboBox.SelectedItem = defaultKey ?? _keyboardKeys.First(static item => !item.IsGroupHeader);
+        LanguageComboBox.DisplayMemberPath = nameof(LanguageOption.Label);
+
+        RefreshLocalizedOptionSources(false);
+        RefreshLanguageOptions(false);
 
         ClicksPerSecondTextBox.Text = FormatDouble(10.0);
         IntervalMsTextBox.Text = FormatDouble(100.0);
@@ -123,6 +114,7 @@ public partial class MainWindow : Window {
 
         ActionTypeComboBox.SelectionChanged += ActionTypeComboBox_SelectionChanged;
         HotkeyModeComboBox.SelectionChanged += HotkeyModeComboBox_SelectionChanged;
+        LanguageComboBox.SelectionChanged += LanguageComboBox_SelectionChanged;
         EnableClickLimitCheckBox.Checked += LimitCheckBox_Changed;
         EnableClickLimitCheckBox.Unchecked += LimitCheckBox_Changed;
         EnableTimeLimitCheckBox.Checked += LimitCheckBox_Changed;
@@ -184,6 +176,17 @@ public partial class MainWindow : Window {
             HotkeyDisplayBadge.Value = FormatHotkey(_hotkeyConfig);
             RegisterHotkey();
         }
+    }
+
+    private void
+        LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+        _ = sender;
+        _ = e;
+
+        if (_isUpdatingLanguageSelection) return;
+        if (LanguageComboBox.SelectedItem is not LanguageOption languageOption) return;
+
+        ApplyLanguage(languageOption.Code);
     }
 
     private void LimitCheckBox_Changed(object sender, RoutedEventArgs e) {
@@ -478,6 +481,8 @@ public partial class MainWindow : Window {
     }
 
     private void UpdateStats(int clickCount, TimeSpan elapsed) {
+        _lastClickCount = clickCount;
+        _lastElapsed = elapsed;
         ClicksTextBlock.Text =
             LocalizationService.Format("Ui.Header.Clicks.Format", clickCount.ToString(CultureInfo.CurrentCulture));
         ElapsedTextBlock.Text = LocalizationService.Format("Ui.Header.Elapsed.Format",
@@ -489,6 +494,74 @@ public partial class MainWindow : Window {
             ? LocalizationService.GetString("Ui.Status.Idle", "Idle")
             : text;
         StatusTextBlock.Text = LocalizationService.Format("Ui.Header.Status.Format", safeText);
+    }
+
+    private void ApplyLanguage(string? languageCode) {
+        LocalizationService.ApplyLanguage(languageCode);
+        RefreshLocalizedOptionSources(true);
+        RefreshLanguageOptions(true);
+        UpdateStats(_lastClickCount, _lastElapsed);
+        SetHeaderStatus(_isRunning
+            ? LocalizationService.GetString("Ui.Status.Running", "Running")
+            : LocalizationService.GetString("Ui.Status.Idle", "Idle"));
+    }
+
+    private void RefreshLocalizedOptionSources(bool keepSelection) {
+        var selectedActionType = ActionType.MouseLeft;
+        if (keepSelection && ActionTypeComboBox.SelectedItem is OptionItem<ActionType> selectedAction) {
+            selectedActionType = selectedAction.Value;
+        }
+
+        var selectedHotkeyMode = _hotkeyConfig.Mode;
+        if (keepSelection && HotkeyModeComboBox.SelectedItem is OptionItem<HotkeyMode> selectedHotkeyModeItem) {
+            selectedHotkeyMode = selectedHotkeyModeItem.Value;
+        }
+
+        var selectedVirtualKeyCode = 0x41;
+        if (keepSelection && KeyboardKeyComboBox.SelectedItem is KeyOption selectedKey && !selectedKey.IsGroupHeader) {
+            selectedVirtualKeyCode = selectedKey.VirtualKeyCode;
+        }
+
+        _actionModes.Clear();
+        _actionModes.AddRange(BuildActionModes());
+        ActionTypeComboBox.ItemsSource = null;
+        ActionTypeComboBox.ItemsSource = _actionModes;
+
+        _hotkeyModes.Clear();
+        _hotkeyModes.AddRange(BuildHotkeyModes());
+        HotkeyModeComboBox.ItemsSource = null;
+        HotkeyModeComboBox.ItemsSource = _hotkeyModes;
+
+        _keyboardKeys.Clear();
+        _keyboardKeys.AddRange(BuildKeyboardKeys());
+        KeyboardKeyComboBox.ItemsSource = null;
+        KeyboardKeyComboBox.ItemsSource = _keyboardKeys;
+
+        SelectActionMode(selectedActionType);
+        SelectHotkeyMode(selectedHotkeyMode);
+        SelectKeyboardKey(selectedVirtualKeyCode);
+        HotkeyDisplayBadge.Value = FormatHotkey(_hotkeyConfig);
+    }
+
+    private void RefreshLanguageOptions(bool keepSelection) {
+        var selectedLanguageCode = LocalizationService.CurrentLanguageCode;
+        if (keepSelection && LanguageComboBox.SelectedItem is LanguageOption selectedLanguage) {
+            selectedLanguageCode = selectedLanguage.Code;
+        }
+
+        _languageOptions.Clear();
+        _languageOptions.AddRange(BuildLanguageOptions());
+
+        _isUpdatingLanguageSelection = true;
+        try {
+            LanguageComboBox.ItemsSource = null;
+            LanguageComboBox.ItemsSource = _languageOptions;
+            var languageItem = _languageOptions.FirstOrDefault(option =>
+                string.Equals(option.Code, selectedLanguageCode, StringComparison.OrdinalIgnoreCase));
+            LanguageComboBox.SelectedItem = languageItem ?? _languageOptions.FirstOrDefault();
+        } finally {
+            _isUpdatingLanguageSelection = false;
+        }
     }
 
     private void ApplyAutoHeight() {
@@ -552,6 +625,7 @@ public partial class MainWindow : Window {
             ClickLimitValue = Math.Clamp(clickLimitValue, 1, 1_000_000),
             IsTimeLimitEnabled = EnableTimeLimitCheckBox.IsChecked == true,
             TimeLimitSeconds = Math.Clamp(timeLimitSeconds, 1, 86_400),
+            LanguageCode = LocalizationService.CurrentLanguageCode,
             Hotkey = new HotkeyConfig {
                 Mode = _hotkeyConfig.Mode,
                 Modifiers = _hotkeyConfig.Modifiers,
@@ -564,6 +638,13 @@ public partial class MainWindow : Window {
 
     private void LoadSettings() {
         var settings = SettingsStore.Load();
+        if (!string.IsNullOrWhiteSpace(settings.LanguageCode) &&
+            !string.Equals(settings.LanguageCode, LocalizationService.CurrentLanguageCode, StringComparison.OrdinalIgnoreCase)) {
+            ApplyLanguage(settings.LanguageCode);
+        } else {
+            RefreshLanguageOptions(false);
+        }
+
         var profile = settings.Profile;
 
         ClicksPerSecondTextBox.Text =
@@ -610,6 +691,31 @@ public partial class MainWindow : Window {
             option = _keyboardKeys.FirstOrDefault(static x => x.VirtualKeyCode == 0x41 && !x.IsGroupHeader);
 
         if (option is not null) KeyboardKeyComboBox.SelectedItem = option;
+    }
+
+    private static IEnumerable<OptionItem<ActionType>> BuildActionModes() {
+        return new[] {
+            new OptionItem<ActionType>(LocalizationService.GetString("Ui.ActionType.MouseLeft", "Mouse Left"), ActionType.MouseLeft),
+            new OptionItem<ActionType>(LocalizationService.GetString("Ui.ActionType.MouseMiddle", "Mouse Middle"), ActionType.MouseMiddle),
+            new OptionItem<ActionType>(LocalizationService.GetString("Ui.ActionType.MouseRight", "Mouse Right"), ActionType.MouseRight),
+            new OptionItem<ActionType>(LocalizationService.GetString("Ui.ActionType.KeyboardKey", "Keyboard Key"), ActionType.KeyboardKey)
+        };
+    }
+
+    private static IEnumerable<OptionItem<HotkeyMode>> BuildHotkeyModes() {
+        return new[] {
+            new OptionItem<HotkeyMode>(LocalizationService.GetString("Ui.HotkeyMode.Toggle", "Toggle"), HotkeyMode.Toggle),
+            new OptionItem<HotkeyMode>(LocalizationService.GetString("Ui.HotkeyMode.Hold", "Hold"), HotkeyMode.Hold)
+        };
+    }
+
+    private static IEnumerable<LanguageOption> BuildLanguageOptions() {
+        return new[] {
+            new LanguageOption("en", LocalizationService.GetString("Ui.Settings.Language.English", "English")),
+            new LanguageOption("de", LocalizationService.GetString("Ui.Settings.Language.German", "Deutsch")),
+            new LanguageOption("fr", LocalizationService.GetString("Ui.Settings.Language.French", "Français")),
+            new LanguageOption("zh", LocalizationService.GetString("Ui.Settings.Language.Chinese", "中文 (Simplified)"))
+        };
     }
 
     private static List<KeyOption> BuildKeyboardKeys() {

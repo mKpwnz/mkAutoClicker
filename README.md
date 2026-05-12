@@ -43,6 +43,17 @@ This makes it useful for scenarios where clickers are not enough and key input i
     - Hotkey recording
 - Persistent settings between sessions
 
+## Languages
+
+mKAutoClicker currently supports:
+
+- English
+- German
+- French
+- Chinese (Simplified)
+
+You can switch the language directly in the **Settings** tab.
+
 ## Screenshots
 
 ### Action
